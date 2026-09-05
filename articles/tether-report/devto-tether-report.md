@@ -62,7 +62,76 @@ answer is both free and on your side of the link.
 
 ## Demo
 
-<!-- DEMO CAPTURE PENDING — a live `tether-report` run goes here -->
+A Pixel 9a on Google Fi, attached over USB-C. This is a real run, captured while
+writing this article, and it spent **no cellular data at all**:
+
+```
+$ python3 bin/tether-report
+```
+
+It opens with what the link actually is:
+
+| | |
+|---|---|
+| Interface | `enxce1d58e89c0f` |
+| Driver | `cdc_ncm` |
+| IPv4 | `10.244.144.215/24` |
+| MTU / max | 1500 / 1500 |
+| Negotiated link | 425 Mbps |
+| Holds default route | yes |
+
+Then the bus, which is where the ceiling usually is:
+
+| | |
+|---|---|
+| Device | `3-2` 18d1:4eec - Pixel 9a |
+| Bus speed | **480 Mbps** (USB 2.0) |
+| BOS capability | SuperSpeed |
+| Type-C connector | `port1` |
+
+And then the part that matters — the rubric's verdict on all of it:
+
+> ### BLOCKER: Another route-capable link is up
+>
+> `wlo1` is up alongside the tether. If the tether drops mid-run, curl still
+> succeeds and the result looks like a tethering measurement. Take these down
+> first.
+
+> ### Problem: Device can do better than 480 Mbps
+>
+> The device advertises SuperSpeed in its BOS descriptor but enumerated at
+> 480 Mbps. Connector `port1` has an enumerated SuperSpeed half, so the host is
+> declared capable and **the cable is the leading suspect** — an unmarked C-to-C
+> cable is very often USB 2.0.
+
+> ### Note: NCM aggregation buffers
+>
+> `rx_max=16384`, `tx_max=16384`. Compare these against the device-advertised
+> `dwNtbInMaxSize`/`dwNtbOutMaxSize`: **if they already match, the common "raise
+> these to 32768" advice is a no-op** and changing them will do nothing.
+
+> ### Note: No measurements taken
+>
+> Run again with `--measure` for the throughput and latency half of the rubric.
+> That costs roughly 56 MB of metered cellular data.
+
+Four useful things about this link, and the price was zero.
+
+The blocker is the one I want to point at. Wi-Fi was still up, so any transfer
+run at that moment could have gone out over Wi-Fi and come back looking like a
+tethering result. That is not a hypothetical — it is the most common way a
+tethering measurement quietly becomes a measurement of something else, and a
+tool that charged you 56 MB before mentioning it would have charged you for a
+number that meant nothing.
+
+The last note is the design in one line. It did not measure. It told me what
+measuring would cost and let me decide.
+
+*One difference from the records in this repo: the tether was enabled here with
+`adb shell svc usb setFunctions ncm` rather than the phone's own tethering
+toggle, and it enumerated as `18d1:4eec` where the recorded passes show
+`18d1:4eeb`. Same driver and same interface, slightly different USB function
+composition.*
 
 ## Code
 
@@ -205,6 +274,11 @@ defaults are where most of it either happens or does not. Three of them here:
 The most useful thing I can give someone whose connection is their phone is not
 my numbers. It is a way to get their own, at no cost, and a fix that was already
 paid for before they arrived.
+
+## Prize Categories
+
+None. This entry does not use Snowflake, Solana, ElevenLabs or Google AI, so it
+is submitted to the overall category only.
 
 ## Summary
 
