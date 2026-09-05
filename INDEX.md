@@ -5,6 +5,7 @@ the spread is the finding.
 
 | Date | Phone | Carrier | Driver | Bus | CC | Single (Mbps) | Par-4 | RTT avg | Verdict |
 |---|---|---|---|---|---|---|---|---|---|
+| 2026-09-05 | [Galaxy S24](tests/2026-09-05-galaxy-s24-google-fi-lte.md) | Google Fi | rndis_host | 2.0 | bbr | 115 / 113 / 143 | 263 | 22.0 ms | good |
 | 2026-09-05 | [iPhone 17 Pro](tests/2026-09-05-iphone-17-pro-att.md) | AT&T | ipheth | 2.0 | bbr | 96 / 103 / 103 | 178 | 38.0 ms | good |
 | 2026-09-05 | [iPhone 16e](tests/2026-09-05-iphone-16e-google-fi.md) | Google Fi | ipheth | 2.0 | bbr | 87 / 119 / 101 | 228 | 25.6 ms | good |
 | 2026-09-05 | [Motorola razr 2024](tests/2026-09-05-motorola-razr-2024-google-fi-cubic.md) | Google Fi | rndis_host | 2.0 | cubic | 135 / 121 / 163 | 238 | 37.7 ms | usable |
@@ -45,3 +46,8 @@ the spread is the finding.
 - [ ] Capture `gsm.network.type` during a pass on the four records that still
       have `carrier.network` blank - or accept that they cannot be filled
       retrospectively and leave them.
+- [ ] **Re-run the two Galaxy S24 units back to back.** They differ only in
+      radio (NR_SA vs LTE) and the LTE unit won on every measure, including
+      14.4 ms of RTT. Running them at the same moment removes the
+      time-of-day confound; forcing one unit between LTE and 5G removes
+      the last one.
