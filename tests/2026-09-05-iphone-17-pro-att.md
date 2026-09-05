@@ -129,6 +129,9 @@ Zero errors and zero drops across roughly 46k RX / 14k TX packets.
   distinct physical ports failing identically is far less likely than one USB 2.0
   cable, so the **cable is now the prime suspect** and a known-good USB 3 cable
   is the remaining test.
+  **Now done: a second C-to-C cable in the same port enumerated at 480 as well**
+  ([record](2026-09-05-iphone-17-pro-att-cable2.md)). That eliminates the first
+  cable but not cables as a class - neither is verifiably SuperSpeed-rated.
 - Neither USB-C port reaches the Thunderbolt 4 controller at `00:0d.0`, whose
   20 Gb/s root hub has still never seen a device. There is a port on this machine
   that has never been used; TB4 is guaranteed SuperSpeed-wired, so a 480 reading
