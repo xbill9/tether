@@ -1,12 +1,12 @@
 ---
-id: 2026-09-05-galaxy-z-flip6
+id: 2026-09-05-galaxy-z-flip6-google-fi
 date: 2026-09-05
 phone:
   make: Samsung
   model: Galaxy Z Flip6
   os:                 # TODO not readable from the host; not supplied for this unit
 carrier:
-  name:               # TODO not supplied - host sees T-Mobile IPv6 space, which does not distinguish T-Mobile from Fi or an MVNO
+  name: Google Fi     # operator-supplied; not determinable from the host, see Issues
   network:            # TODO not readable from the host
 usb:
   vendor_id: "04e8"
@@ -92,15 +92,21 @@ Zero errors and zero drops across roughly 42k RX / 19k TX packets.
 
 ## Issues
 
-The carrier is not recorded. The host sees an IPv6 delegation in
-2607:fb90::/32, which is T-Mobile space - but that is equally consistent with
-T-Mobile proper, Google Fi (which rides T-Mobile and produced 2607:fb90 and
-2607:fb91 prefixes in earlier records), or any T-Mobile MVNO. Left blank rather
-than guessed, per the format's rule.
+**The carrier could not be determined from the host**, and this is worth
+recording as a limit of the method rather than a one-off. The host sees an IPv6
+delegation in 2607:fb90::/32, which is T-Mobile space - but that is equally
+consistent with T-Mobile proper, Google Fi, or any T-Mobile MVNO. Google Fi
+rides T-Mobile and produced 2607:fb90 and 2607:fb91 prefixes in earlier records,
+so the prefix cannot separate them even in principle.
+
+`carrier.name` was left blank at write time and backfilled on 2026-09-05 from
+the operator, who confirmed **Google Fi**. Recorded here rather than silently
+filled so that it is not mistaken for something the host observed. No
+measurement changed. `carrier.network` is still unknown.
 
 ## Follow-ups
 
-- Carrier, radio type and OS version - all need reading off the phone.
+- Radio type and OS version - both still need reading off the phone.
 - **The USB ceiling evidence has moved.** This phone advertises SuperSpeed in
   its BOS descriptor and still enumerated at 480:
 
