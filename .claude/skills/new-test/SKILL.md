@@ -114,6 +114,16 @@ adb shell getprop gsm.operator.alpha        # what the radio reports as the oper
 - `unauthorized` in `adb devices` means the handset has not accepted the RSA
   prompt. Ask the operator to accept it before falling back — do not treat it
   as "adb unavailable".
+- **Accepting that prompt can bounce the tether, and has.** On a Galaxy S24 the
+  interface was recreated with a new MAC, so it got a new name and a new DHCP
+  lease (`enx6e6e82944d55` → `enx763dd1c95175`) mid-session. Get the phone
+  authorised *before* starting a pass, then **re-read the interface name** and
+  confirm the default route still points at it. Record the interface that
+  actually carried the traffic.
+- **Confirm WiFi is down before trusting any number.** If the tether drops and
+  another route takes over, `curl` still succeeds and the result looks like a
+  tethering measurement. `ip route show default` must name the tether interface,
+  and `ip -br link` should show no other route-capable link up.
 - `gsm.operator.alpha` may report the MVNO brand or the underlying host network
   depending on the device — a Google Fi SIM on a Galaxy Z Flip6 reported
   `Google Fi`, while the same carrier's IPv6 delegation is indistinguishable
