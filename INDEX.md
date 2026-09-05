@@ -5,6 +5,7 @@ the spread is the finding.
 
 | Date | Phone | Carrier | Driver | Bus | CC | Single (Mbps) | Par-4 | RTT avg | Verdict |
 |---|---|---|---|---|---|---|---|---|---|
+| 2026-09-05 | [Galaxy S24](tests/2026-09-05-galaxy-s24-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 98 / 112 / 113 | 230 | 36.4 ms | good |
 | 2026-09-05 | [Galaxy S25](tests/2026-09-05-galaxy-s25-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 70 / 112 / 61 | 238 | 31.4 ms | good |
 | 2026-09-05 | [Galaxy Z Flip6](tests/2026-09-05-galaxy-z-flip6-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 102 / 121 / 113 | 232 | 23.0 ms | good |
 | 2026-09-05 | [Pixel 9a](tests/2026-09-05-pixel-9a-att.md) | AT&T | cdc_ncm | 2.0 | bbr | 106 / 100 / 104 | 273 | 36.8 ms | good |
@@ -18,9 +19,9 @@ the spread is the finding.
 - [ ] iPhone - host side is ready (`ipheth` + `usbmuxd` 1.1.1 +
       `libimobiledevice-utils` 1.3.0 installed 2026-09-05), never tested against
       real hardware. iOS 17+ may bind `cdc_ncm` instead of `ipheth`; record which.
-- [ ] **USB 3 cable - the highest-value test in this repo.** Four
+- [ ] **USB 3 cable - the highest-value test in this repo.** Five
       SuperSpeed-capable phones across three vendors (2x Pixel 9a, Galaxy Z
-      Flip6, Galaxy S25) all enumerate at 480, aggregate has reached 91% of
+      Flip6, Galaxy S25, Galaxy S24) all enumerate at 480, aggregate has reached 91% of
       the USB 2.0 ceiling, and no device on this host has ever trained
       SuperSpeed on any bus. The phone is ruled out; suspicion leans toward
       the host port over the cable, but one pass settles it.
