@@ -23,16 +23,21 @@ the spread is the finding.
       ([record](tests/2026-09-05-iphone-16e-google-fi.md)). **It binds `ipheth`**,
       not `cdc_ncm`. Also: `/28` subnet rather than `/24`, and `carrier.network`
       is unobtainable on iOS - there is no adb equivalent.
-- [ ] **Move the cable to a different physical port. Free, instant, and it
-      settles the largest open question here.** The iPhone 17 Pro advertises
-      SuperSpeedPlus at 10 Gb/s and still enumerated at 480, on a host whose
-      `usb2` (20 Gb/s) and `usb4` (10 Gb/s) root hubs are working and idle.
-      Six of seven handsets tested advertise High Speed or better and all
-      enumerate at 480; nothing has ever trained SuperSpeed on this machine.
-      Only two candidates remain - a USB 2.0 cable, or a port not wired for
-      SuperSpeed - and swapping ports separates them at no cost.
+- [ ] **Try a different cable - the port has been ruled out.** The iPhone 17 Pro
+      advertises SuperSpeedPlus at 10 Gb/s and enumerated at 480 in **two
+      different physical USB-C ports** (`3-2` then `3-1`), same cable both times,
+      on a host whose `usb2` (20 Gb/s) and `usb4` (10 Gb/s) root hubs are working
+      and idle. Two ports failing the same way is far less likely than one bad
+      cable, so the cable is now the prime suspect. A known-good USB 3 cable
+      settles it.
       (The razr 2024 and iPhone 16e advertise no SuperSpeed, so 480 is genuinely
       their ceiling and they cannot help answer this.)
+- [ ] **Find the Thunderbolt 4 port.** Controller `00:0d.0` with its 20 Gb/s
+      root hub has never had a single device attached, across every phone and
+      peripheral tested. Neither USB-C port tried so far reaches it, so there is
+      a port on this machine - likely marked with a lightning bolt - that has
+      never been used. Worth locating: TB4 is guaranteed SuperSpeed-wired, so a
+      480 reading there would convict the cable beyond doubt.
 - [x] Pixel 9a 4-stream parallel under BBR - done 2026-09-05, 246 Mbps
       ([record](tests/2026-09-05-pixel-9a-google-fi.md)).
 - [x] Any RNDIS phone - done 2026-09-05, Motorola razr 2024

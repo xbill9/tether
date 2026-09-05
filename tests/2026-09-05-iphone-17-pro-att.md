@@ -123,8 +123,16 @@ Zero errors and zero drops across roughly 46k RX / 14k TX packets.
 
 ## Follow-ups
 
-- **Move the cable to another port.** Free, instant, and it resolves the largest
-  open question in this repo. See above.
+- ~~Move the cable to another port.~~ **Done, same day: the phone was moved to
+  the other USB-C port (`3-2` to `3-1`, confirmed by the physical slot swap with
+  the Lenovo receiver) with the same cable, and enumerated at 480 again.** Two
+  distinct physical ports failing identically is far less likely than one USB 2.0
+  cable, so the **cable is now the prime suspect** and a known-good USB 3 cable
+  is the remaining test.
+- Neither USB-C port reaches the Thunderbolt 4 controller at `00:0d.0`, whose
+  20 Gb/s root hub has still never seen a device. There is a port on this machine
+  that has never been used; TB4 is guaranteed SuperSpeed-wired, so a 480 reading
+  there would settle it beyond doubt.
 - If the port turns out to be the problem, every `usb.cable` field in the log is
   answerable at once, and the aggregate figures in the eight bus-limited records
   become lower bounds rather than measurements.
