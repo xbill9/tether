@@ -102,6 +102,15 @@ adb shell getprop gsm.operator.alpha        # what the radio reports as the oper
 - **Do this before step 3, never during.** Enabling USB debugging renegotiates
   the USB configuration on some phones and can bounce the tether interface
   mid-transfer, silently invalidating the run.
+- **Read `gsm.network.type` again immediately after the transfers**, and record
+  it only if both readings agree. The radio can switch mid-session, and a
+  post-hoc reading cannot establish what was in use during the pass. If they
+  disagree, leave `carrier.network` blank and say so - a wrong radio type
+  silently poisons every carrier comparison drawn from the record.
+- **Do not accept a status-bar reading as the radio type.** AT&T brands
+  LTE-Advanced as "5G E", so a handset showing "5G" on that carrier may be on
+  LTE. `gsm.network.type` distinguishes them: `NR_SA` / `NR_NSA` are real 5G,
+  `LTE` is not.
 - `unauthorized` in `adb devices` means the handset has not accepted the RSA
   prompt. Ask the operator to accept it before falling back — do not treat it
   as "adb unavailable".
