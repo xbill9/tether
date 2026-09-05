@@ -5,6 +5,7 @@ the spread is the finding.
 
 | Date | Phone | Carrier | Driver | Bus | CC | Single (Mbps) | Par-4 | RTT avg | Verdict |
 |---|---|---|---|---|---|---|---|---|---|
+| 2026-09-05 | [iPhone 16e](tests/2026-09-05-iphone-16e-google-fi.md) | Google Fi | ipheth | 2.0 | bbr | 87 / 119 / 101 | 228 | 25.6 ms | good |
 | 2026-09-05 | [Motorola razr 2024](tests/2026-09-05-motorola-razr-2024-google-fi-cubic.md) | Google Fi | rndis_host | 2.0 | cubic | 135 / 121 / 163 | 238 | 37.7 ms | usable |
 | 2026-09-05 | [Galaxy S24](tests/2026-09-05-galaxy-s24-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 98 / 112 / 113 | 230 | 36.4 ms | good |
 | 2026-09-05 | [Galaxy S25](tests/2026-09-05-galaxy-s25-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 70 / 112 / 61 | 238 | 31.4 ms | good |
@@ -17,12 +18,14 @@ the spread is the finding.
 
 ## To test
 
-- [ ] iPhone - host side is ready (`ipheth` + `usbmuxd` 1.1.1 +
-      `libimobiledevice-utils` 1.3.0 installed 2026-09-05), never tested against
-      real hardware. iOS 17+ may bind `cdc_ncm` instead of `ipheth`; record which.
+- [x] iPhone - done 2026-09-05, iPhone 16e on iOS 27.0
+      ([record](tests/2026-09-05-iphone-16e-google-fi.md)). **It binds `ipheth`**,
+      not `cdc_ncm`. Also: `/28` subnet rather than `/24`, and `carrier.network`
+      is unobtainable on iOS - there is no adb equivalent.
 - [ ] **USB 3 cable - the highest-value test in this repo.** Five
       SuperSpeed-capable phones across three vendors (2x Pixel 9a, Galaxy Z
-      Flip6, Galaxy S25, Galaxy S24) all enumerate at 480, aggregate has reached 91% of
+      Flip6, Galaxy S25, Galaxy S24) all enumerate at 480 - while the razr 2024
+      and iPhone 16e advertise no SuperSpeed, so 480 is genuinely their ceiling - aggregate has reached 91% of
       the USB 2.0 ceiling, and no device on this host has ever trained
       SuperSpeed on any bus. The phone is ruled out; suspicion leans toward
       the host port over the cable, but one pass settles it.
