@@ -96,7 +96,8 @@ adb shell getprop ro.product.manufacturer   # phone.make
 adb shell getprop ro.product.model          # phone.model
 adb shell getprop ro.build.version.release  # phone.os, e.g. "16"
 adb shell getprop gsm.network.type          # carrier.network, e.g. "NR" (5G), "LTE"
-adb shell getprop gsm.operator.alpha        # what the radio reports as the operator
+adb shell getprop gsm.operator.alpha        # operator per the radio
+adb shell getprop gsm.sim.operator.alpha    # operator per the SIM — read both
 ```
 
 - **Do this before step 3, never during.** Enabling USB debugging renegotiates
@@ -124,6 +125,10 @@ adb shell getprop gsm.operator.alpha        # what the radio reports as the oper
   another route takes over, `curl` still succeeds and the result looks like a
   tethering measurement. `ip route show default` must name the tether interface,
   and `ip -br link` should show no other route-capable link up.
+- **Read both operator properties; they disagree.** A Galaxy S24 returned
+  `Project Fi` from `gsm.operator.alpha` — the service's retired name — while
+  `gsm.sim.operator.alpha` returned the current `Google Fi`. Same carrier, but
+  a mechanical string match would miss it.
 - `gsm.operator.alpha` may report the MVNO brand or the underlying host network
   depending on the device — a Google Fi SIM on a Galaxy Z Flip6 reported
   `Google Fi`, while the same carrier's IPv6 delegation is indistinguishable
