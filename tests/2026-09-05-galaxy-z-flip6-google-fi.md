@@ -3,11 +3,11 @@ id: 2026-09-05-galaxy-z-flip6-google-fi
 date: 2026-09-05
 phone:
   make: Samsung
-  model: Galaxy Z Flip6
-  os:                 # TODO not readable from the host; not supplied for this unit
+  model: Galaxy Z Flip6 (SM-F741U1)
+  os: Android 16      # read over adb (ro.build.version.release=16, sdk 36)
 carrier:
-  name: Google Fi     # operator-supplied; not determinable from the host, see Issues
-  network:            # TODO not readable from the host
+  name: Google Fi     # operator-supplied, later corroborated over adb - see Issues
+  network: 5G (NR SA) # read over adb (gsm.network.type=NR_SA)
 usb:
   vendor_id: "04e8"
   product_id: "6864"
@@ -102,11 +102,22 @@ so the prefix cannot separate them even in principle.
 `carrier.name` was left blank at write time and backfilled on 2026-09-05 from
 the operator, who confirmed **Google Fi**. Recorded here rather than silently
 filled so that it is not mistaken for something the host observed. No
-measurement changed. `carrier.network` is still unknown.
+measurement changed.
+
+**`adb` was then installed and this phone authorised**, which resolved the rest
+and corrected the assumption above in one useful way: `gsm.operator.alpha`
+reports `Google Fi` outright, so the radio *does* name the MVNO even though its
+IPv6 delegation is indistinguishable from T-Mobile's. Backfilled from it:
+`ro.build.version.release=16`, `gsm.network.type=Unknown,NR_SA` (dual-SIM, so
+one entry per slot - slot 2 on 5G standalone), and the true model `SM-F741U1`,
+which the USB descriptor never carried.
+
+These were read immediately after the measurement pass, not before it, because
+adb was not yet installed when the transfers ran. The connection was unchanged
+throughout.
 
 ## Follow-ups
 
-- Radio type and OS version - both still need reading off the phone.
 - **The USB ceiling evidence has moved.** This phone advertises SuperSpeed in
   its BOS descriptor and still enumerated at 480:
 

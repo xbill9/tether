@@ -35,17 +35,44 @@ ip -d link show "$IF" | grep -o 'maxmtu [0-9]*'               # link.mtu_max
 ip -br addr show "$IF"                                        # ipv4 / ipv6
 ip route show dev "$IF" | grep default                        # link.gateway
 lsusb                                                         # vendor_id / product_id
-sysctl net.ipv4.tcp_congestion_control net.ipv4.tcp_slow_start_after_idle net.ipv4.tcp_mtu_probing
+for f in tcp_congestion_control tcp_slow_start_after_idle tcp_mtu_probing; do
+  echo "$f=$(cat /proc/sys/net/ipv4/$f)"
+done
 ```
+
+`sysctl` is **not on PATH** on this host — read `/proc/sys` directly as above.
+
+Two things are specific to `rndis_host`, and both look like failed readings when
+they are not:
+
+- `/sys/class/net/$IF/speed` reads **`-1`**. RNDIS does not report a link speed.
+  Leave `negotiated_link_mbps` blank with that as the stated reason.
+- The interface sits at operstate `UNKNOWN` rather than `UP`. Normal; check for
+  `UP,LOWER_UP` in the flags instead.
 
 **Check the bus speed before spending any data** — a charge-only cable caps the
 bus at 480 Mbps and makes the whole pass misleading:
 
 ```bash
 for d in /sys/bus/usb/devices/*/; do
-  [ -e "$d/idVendor" ] && echo "$d $(cat $d/idVendor):$(cat $d/idProduct) speed=$(cat $d/speed)"
+  [ -e "$d/idVendor" ] && echo "$(basename $d) $(cat $d/idVendor):$(cat $d/idProduct) speed=$(cat $d/speed) $(cat $d/product 2>/dev/null)"
 done
 ```
+
+**If it enumerated at 480, find out whether the phone could have done better.**
+This is the check that separates "chase the cable" from "this is the device's
+ceiling", and without it a 480 reading is uninterpretable:
+
+```bash
+sudo -n lsusb -v -d <vid>:<pid> 2>/dev/null | grep -iE 'bcdUSB|SuperSpeed USB Device|operate at SuperSpeed'
+```
+
+A BOS descriptor advertising SuperSpeed means the phone can do 5 Gbps and
+something *else* — cable or host port — is holding it at 480, so `usb.cable` is
+worth chasing. No BOS block means 480 is the device's own ceiling and no cable
+will ever move it, which makes `usb.cable` moot rather than merely unverified.
+Record which, in the body. Needs root: without it `lsusb` truncates the
+descriptors and you will simply see nothing.
 
 If the driver is `cdc_ncm`, also collect the NTB block (omit it entirely for
 `rndis_host` / `ipheth`):
@@ -56,6 +83,47 @@ for f in rx_max tx_max tx_timer_usecs; do echo "$f=$(cat /sys/class/net/$IF/cdc_
 
 Record `errors` and `drops` from `ip -s link show "$IF"` — read them *after*
 the transfers, so they cover the test.
+
+## 2b. Device metadata over adb
+
+`phone.os`, `carrier.network` and — on Samsung — the real model are **not**
+readable over a tether-only USB function. `adb` (installed 2026-09-05) gets all
+three:
+
+```bash
+adb devices -l
+adb shell getprop ro.product.manufacturer   # phone.make
+adb shell getprop ro.product.model          # phone.model
+adb shell getprop ro.build.version.release  # phone.os, e.g. "16"
+adb shell getprop gsm.network.type          # carrier.network, e.g. "NR" (5G), "LTE"
+adb shell getprop gsm.operator.alpha        # what the radio reports as the operator
+```
+
+- **Do this before step 3, never during.** Enabling USB debugging renegotiates
+  the USB configuration on some phones and can bounce the tether interface
+  mid-transfer, silently invalidating the run.
+- `unauthorized` in `adb devices` means the handset has not accepted the RSA
+  prompt. Ask the operator to accept it before falling back — do not treat it
+  as "adb unavailable".
+- `gsm.operator.alpha` may report the MVNO brand or the underlying host network
+  depending on the device — a Google Fi SIM on a Galaxy Z Flip6 reported
+  `Google Fi`, while the same carrier's IPv6 delegation is indistinguishable
+  from T-Mobile's. Treat it as strong corroboration, but confirm with the
+  operator before writing `carrier.name`.
+- Both `gsm.*` properties are **comma-separated per SIM slot** on dual-SIM
+  phones: `Unknown,NR_SA` means slot 1 is idle and slot 2 is on 5G standalone.
+  Read the populated slot, not the whole string.
+- If adb is genuinely unavailable — not installed, debugging off, prompt
+  declined — ask the operator to read the values off the phone, and leave the
+  fields blank with `# TODO` if they are not supplied. **Never take an OS
+  version from a spec site**: those give the OS the phone *shipped* with, not
+  what is installed now.
+- Mark operator-supplied values in the frontmatter comment, so they are never
+  mistaken for host observations.
+
+USB product strings are vendor-dependent: Google and Motorola put the marketing
+name in the descriptor, Samsung reports only `SAMSUNG_Android`. On Samsung the
+model must come from adb or the operator.
 
 ## 3. Measure
 
@@ -105,6 +173,10 @@ Fill the four body sections as analysis, not a transcript:
   single-stream spread with flat RTT is congestion control collapsing on radio
   loss; single ≈ parallel aggregate is genuinely WAN-limited; aggregate near
   300 Mbps on a 480 Mbps bus is the USB 2.0 ceiling, i.e. a cable problem.
+  If the shape fits none of the three, **say so explicitly** rather than forcing
+  it into the nearest one — a near-flat single-stream spread with aggregate far
+  above it, for instance, points at a per-flow limit that the rubric does not
+  yet cover.
 - **Issues** — problems hit and how they were resolved. Leave empty if none.
 - **Follow-ups** — anything untested or worth retrying.
 
