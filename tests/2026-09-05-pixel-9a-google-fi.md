@@ -140,7 +140,7 @@ not change without a deliberate update and a reboot.
 standalone) afterwards, but that does not establish what the radio was doing
 during the transfers. The AT&T Pixel showed the cost of assuming otherwise: it
 was reported as 5G at test time and read `LTE` later, and that field is now
-blank there too. Only a reading taken during a pass can fill this honestly.
+blank there too. Only a reading taken during a pass can fill this.
 
 **Both Pixel 9a units in this log run the identical build**
 `CP41.260814.003.B1`, which removes the OS as a variable between them - useful,
