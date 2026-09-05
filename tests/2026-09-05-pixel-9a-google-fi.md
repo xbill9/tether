@@ -4,10 +4,10 @@ date: 2026-09-05
 phone:
   make: Google
   model: Pixel 9a
-  os:                 # TODO not readable from the host - no adb, no MTP mount; needs Settings > About phone
+  os: Android 17      # beta build CP41.260814.003.B1, read over adb after the pass
 carrier:
   name: Google Fi
-  network:            # TODO not readable from the host - needs the phone's status bar / About phone
+  network:            # TODO unresolved - only a reading taken during a pass can fill this, see body
 usb:
   vendor_id: "18d1"
   product_id: "4eeb"
@@ -118,3 +118,33 @@ guessed - it needs reading off the device.
   constraint.
 - Single-stream spread was 1.8x here vs 1.4x in the earlier BBR pass. Worth a
   fourth pass to see which is representative.
+
+## Post-test: metadata over adb
+
+`adb` was installed on 2026-09-05, after this pass, and this handset authorised.
+Read from the device:
+
+    ro.build.version.release        17
+    ro.build.id                     CP41.260814.003.B1   (device name tegu_beta)
+    ro.build.version.security_patch 2026-08-05
+    gsm.operator.alpha              ,Google Fi
+    gsm.network.type                Unknown,NR_SA
+
+`phone.os` is backfilled to **Android 17 on a beta build**. The build id is
+recorded alongside it because "Android 17" on its own understates the situation
+- this is not a shipping OS, and its network stack need not match one. Reading a
+version hours after a pass is safe in a way a radio reading is not: an OS does
+not change without a deliberate update and a reboot.
+
+`carrier.network` is **deliberately left blank**. The phone read `NR_SA` (5G
+standalone) afterwards, but that does not establish what the radio was doing
+during the transfers. The AT&T Pixel showed the cost of assuming otherwise: it
+was reported as 5G at test time and read `LTE` later, and that field is now
+blank there too. Only a reading taken during a pass can fill this honestly.
+
+**Both Pixel 9a units in this log run the identical build**
+`CP41.260814.003.B1`, which removes the OS as a variable between them - useful,
+because they differ in carrier, in physical unit, and in little else that was
+ever recorded.
+
+No measurement changed.

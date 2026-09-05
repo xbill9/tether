@@ -4,10 +4,10 @@ date: 2026-09-05
 phone:
   make: Google
   model: Pixel 9a
-  os:                 # TODO not recorded at test time
+  os: Android 17      # beta build CP41.260814.003.B1, read over adb after the pass
 carrier:
   name: Google Fi     # backfilled 2026-09-05, not recorded at test time
-  network:            # TODO not recorded at test time
+  network:            # TODO unresolved - only a reading taken during a pass can fill this, see body
 usb:
   vendor_id: "18d1"
   product_id: "4eeb"
@@ -88,3 +88,14 @@ repeated advice to raise them to 32768 is a no-op on this phone. `mtu_max` is
 
 Phone enumerated on a USB 2.0 bus (480 Mbps) despite the host having a 3.0 root
 hub on bus 004 - almost certainly a USB 2.0 or charge-only cable. Untested.
+
+## Post-test: metadata over adb
+
+`phone.os` backfilled on 2026-09-05 from `adb`, after this pass: **Android 17**,
+beta build `CP41.260814.003.B1`, security patch 2026-08-05. Same handset and
+same session as the other two Pixel 9a Google Fi records; the full reading and
+the reasoning are in
+[2026-09-05-pixel-9a-google-fi](2026-09-05-pixel-9a-google-fi.md).
+
+`carrier.network` stays blank on purpose - a radio type read after the fact does
+not establish what was in use during the transfers. No measurement changed.
