@@ -6,7 +6,7 @@ phone:
   model: Pixel 9a
   os:                 # TODO not recorded at test time
 carrier:
-  name:               # TODO not recorded at test time
+  name: Google Fi     # backfilled 2026-09-05, not recorded at test time
   network:            # TODO not recorded at test time
 usb:
   vendor_id: "18d1"
@@ -46,6 +46,11 @@ verdict: poor
 ---
 
 # Pixel 9a - baseline (CUBIC, as shipped)
+
+> Carrier backfilled on 2026-09-05 from the
+> [Google Fi record](2026-09-05-pixel-9a-google-fi.md), which confirmed the same
+> phone and session. It was not recorded at test time; `carrier.network` is
+> still unknown. No measurement was changed.
 
 Baseline before any tuning. Superseded by
 [2026-09-05-pixel-9a-bbr](2026-09-05-pixel-9a-bbr.md); kept because the

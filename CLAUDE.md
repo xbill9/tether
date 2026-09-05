@@ -22,8 +22,14 @@ and are authoritative:
   the frontmatter `id` must equal the filename stem.
 - **Add the matching `INDEX.md` row in the same change** (newest first). Nothing
   generates that table, so it drifts silently if skipped.
-- A re-test after a config change gets a **new file** — never overwrite or edit
-  an existing record (README methodology rule 3).
+- A re-test after a config change gets a **new file**, never a rewrite of an
+  existing one (README methodology rule 3).
+- Editing an existing record is otherwise fine: backfill a `# TODO` field once
+  the answer is known, correct a wrong value, add a cross-link. The one thing
+  that must not change is a **recorded measurement** — if the numbers would
+  move, that is a new record, not an edit. Say in the body what was backfilled
+  and when, so a filled-in field is never mistaken for one measured at test
+  time.
 - Leave unknown fields blank with an inline `# TODO <reason>` comment rather
   than guessing or dropping the key.
 - Never carry a number over from another record. If a run was not performed,
