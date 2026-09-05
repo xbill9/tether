@@ -3,7 +3,7 @@ id: 2026-09-05-motorola-razr-2024-google-fi
 date: 2026-09-05
 phone:
   make: Motorola
-  model: razr 2024
+  model: razr 2024 (XT2453-3)
   os:                 # TODO not readable from the host - no adb, no MTP mount; needs Settings > About phone
 carrier:
   name: Google Fi
@@ -53,6 +53,10 @@ Plugged in and came up on its own; NetworkManager DHCPed it through the same
 generic `Wired connection 1` profile that adopted the Pixel, dual-stacked, and
 made it the only default route. The Pixel was unplugged first, so there was no
 ambiguity about which interface the transfers used.
+
+The USB descriptor reports the product only as `motorola razr 2024`; the full
+model number **XT2453-3** was supplied by the operator, not read from the
+device. This is the US unlocked variant.
 
 Bound to `rndis_host`, not NCM. Two consequences for this format:
 
