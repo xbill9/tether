@@ -100,6 +100,12 @@ adb shell getprop gsm.operator.alpha        # operator per the radio
 adb shell getprop gsm.sim.operator.alpha    # operator per the SIM — read both
 ```
 
+- **Never record the device serial.** `adb devices -l` prints it and
+  `ro.serialno` returns it; both are per-handset identifiers and this is a
+  public GitHub repo. Use it in the session to tell two units apart if you must,
+  but write "a second, physically distinct unit" in the record - never the
+  value. The same goes for IMEI and any full global IPv6 address; carrier
+  prefixes and private IPv4 are fine.
 - **Do this before step 3, never during.** Enabling USB debugging renegotiates
   the USB configuration on some phones and can bounce the tether interface
   mid-transfer, silently invalidating the run.

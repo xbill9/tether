@@ -1,0 +1,784 @@
+#!/usr/bin/env python3
+"""tether-report - describe the current USB tether and recommend improvements.
+
+Collects every host-observable fact about the active USB tether, applies the
+diagnostic rubric from README.md, and prints a markdown report.
+
+By default it measures nothing and costs no cellular data. Pass --measure to
+run the repo's standard pass (three single-stream transfers, the 4-concurrent
+parallel test and ping), which costs roughly 56 MB of metered data.
+"""
+
+import argparse
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+from concurrent.futures import ThreadPoolExecutor
+
+# Fixed by README.md. Changing either makes results incomparable with every
+# existing record in tests/.
+ENDPOINT = "https://speed.cloudflare.com/__down?bytes=8000000"
+PING_HOST = "speed.cloudflare.com"
+TETHER_DRIVERS = ("cdc_ncm", "rndis_host", "ipheth")
+
+# Realistic bulk ceiling of a 480 Mbps USB 2.0 bus, after protocol overhead.
+USB2_BULK_CEILING = 300
+
+
+# --------------------------------------------------------------------------
+# helpers
+# --------------------------------------------------------------------------
+
+def read(path):
+    """Return the stripped contents of path, or None if unreadable."""
+    try:
+        with open(path) as fh:
+            return fh.read().strip()
+    except (OSError, UnicodeDecodeError):
+        return None
+
+
+def read_int(path):
+    v = read(path)
+    try:
+        return int(v)
+    except (TypeError, ValueError):
+        return None
+
+
+def run(cmd, timeout=20):
+    """Run cmd (list), returning stdout or None. Never raises."""
+    if not shutil.which(cmd[0]):
+        return None
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
+    except (subprocess.TimeoutExpired, OSError):
+        return None
+    return p.stdout if p.returncode == 0 else None
+
+
+# --------------------------------------------------------------------------
+# interface discovery
+# --------------------------------------------------------------------------
+
+def iface_driver(ifname):
+    """Driver bound to ifname, or None.
+
+    realpath() on a missing path returns the path itself, so the islink check
+    is what keeps a driverless interface (lo, a bridge) from reporting the
+    literal string "driver".
+    """
+    link = f"/sys/class/net/{ifname}/device/driver"
+    if not os.path.islink(link):
+        return None
+    return os.path.basename(os.path.realpath(link))
+
+
+def default_route():
+    """Return (interface, gateway) for the IPv4 default route."""
+    out = run(["ip", "route", "show", "default"]) or ""
+    m = re.search(r"default via (\S+) dev (\S+)", out)
+    return (m.group(2), m.group(1)) if m else (None, None)
+
+
+def find_interface(override=None):
+    """Pick the tether interface. Returns (ifname, note)."""
+    candidates = []
+    for ifname in sorted(os.listdir("/sys/class/net")):
+        if iface_driver(ifname) in TETHER_DRIVERS:
+            candidates.append(ifname)
+
+    if override:
+        if not os.path.isdir(f"/sys/class/net/{override}"):
+            return None, (f"no interface named {override}"
+                          + (f" (tether interfaces present: {', '.join(candidates)})" if candidates else ""))
+        if override not in candidates:
+            return override, (f"forced with --interface; its driver is "
+                              f"`{iface_driver(override) or 'none'}`, not one of "
+                              f"{', '.join(TETHER_DRIVERS)} - this is probably not a tether")
+        return override, "forced with --interface"
+
+    if not candidates:
+        return None, "no interface bound to cdc_ncm, rndis_host or ipheth"
+    if len(candidates) == 1:
+        return candidates[0], None
+
+    routed, _ = default_route()
+    if routed in candidates:
+        return routed, f"{len(candidates)} tether interfaces present; chose the one holding the default route"
+    return candidates[0], f"{len(candidates)} tether interfaces present and none holds the default route - picked {candidates[0]} arbitrarily, check this"
+
+
+# --------------------------------------------------------------------------
+# fact collection
+# --------------------------------------------------------------------------
+
+def link_facts(ifname):
+    f = {"interface": ifname}
+    f["operstate"] = read(f"/sys/class/net/{ifname}/operstate")
+    f["mtu"] = read_int(f"/sys/class/net/{ifname}/mtu")
+    f["mac"] = read(f"/sys/class/net/{ifname}/address")
+
+    # rndis_host and ipheth report no link speed; -1 and EINVAL respectively.
+    raw = read(f"/sys/class/net/{ifname}/speed")
+    f["negotiated_link_mbps"] = int(raw) if raw and raw.lstrip("-").isdigit() and int(raw) > 0 else None
+
+    out = run(["ip", "-d", "link", "show", ifname]) or ""
+    m = re.search(r"maxmtu (\d+)", out)
+    f["mtu_max"] = int(m.group(1)) if m else None
+    f["flags_up"] = "UP,LOWER_UP" in out or "LOWER_UP" in out
+
+    out = run(["ip", "-br", "addr", "show", ifname]) or ""
+    v4 = re.search(r"(\d+\.\d+\.\d+\.\d+/\d+)", out)
+    f["ipv4"] = v4.group(1) if v4 else None
+    f["ipv6"] = bool(re.search(r"\s([0-9a-f]{1,4}:[0-9a-f:]+/\d+)", out) and "fe80:" not in out.split()[2:3])
+    f["ipv6"] = len([t for t in out.split() if ":" in t and not t.startswith("fe80")]) > 0
+
+    routed, gw = default_route()
+    f["gateway"] = gw if routed == ifname else None
+    f["holds_default_route"] = routed == ifname
+    f["default_route_dev"] = routed
+    return f
+
+
+def usb_facts(ifname):
+    """Walk up from the netdev to its USB device directory."""
+    f = {}
+    real = os.path.realpath(f"/sys/class/net/{ifname}/device")
+    devdir = real
+    # The netdev's parent is a USB interface (e.g. 3-1:1.0); step up to 3-1.
+    while devdir != "/" and not os.path.exists(os.path.join(devdir, "idVendor")):
+        devdir = os.path.dirname(devdir)
+    if not os.path.exists(os.path.join(devdir, "idVendor")):
+        return f
+
+    f["sysfs"] = devdir
+    f["usb_id"] = os.path.basename(devdir)
+    f["vendor_id"] = read(os.path.join(devdir, "idVendor"))
+    f["product_id"] = read(os.path.join(devdir, "idProduct"))
+    f["manufacturer"] = read(os.path.join(devdir, "manufacturer"))
+    f["product"] = read(os.path.join(devdir, "product"))
+    f["bcd_usb"] = (read(os.path.join(devdir, "version")) or "").strip()
+    f["bus_speed_mbps"] = read_int(os.path.join(devdir, "speed"))
+    f["behind_hub"] = "." in f["usb_id"].split("-", 1)[-1]
+    return f
+
+
+def bos_capability(vendor_id, product_id):
+    """Read the BOS descriptor. Needs root; returns dict with 'available'."""
+    if not vendor_id or not product_id:
+        return {"available": False, "reason": "no USB id"}
+    out = run(["sudo", "-n", "lsusb", "-v", "-d", f"{vendor_id}:{product_id}"], timeout=25)
+    if out is None:
+        return {"available": False,
+                "reason": "needs root - lsusb truncates descriptors without it, so this is unknown, not absent"}
+    ss = "SuperSpeed USB Device Capability" in out
+    ssp = "SuperSpeedPlus USB Device Capability" in out
+    rates = sorted(set(re.findall(r"(\d+Gb/s)", out)))
+    return {"available": True, "superspeed": ss, "superspeed_plus": ssp, "rates": rates}
+
+
+def typec_topology():
+    """Map each Type-C connector to its USB 2.0 and SuperSpeed halves.
+
+    The kernel binds both to the connector at boot when the host runs a Type-C
+    port controller (UCSI etc), which is what makes this readable at all.
+    """
+    base = "/sys/class/typec"
+    if not os.path.isdir(base):
+        return None
+    ports = {}
+    for entry in sorted(os.listdir(base)):
+        if not re.fullmatch(r"port\d+", entry):
+            continue
+        pdir = os.path.join(base, entry)
+        halves = []
+        for sub in sorted(os.listdir(pdir)):
+            if not re.fullmatch(r"usb\d+-port\d+", sub):
+                continue
+            realp = os.path.realpath(os.path.join(pdir, sub))
+            busname = re.search(r"/(usb\d+)/", realp + "/")
+            busname = busname.group(1) if busname else None
+            speed = read_int(f"/sys/bus/usb/devices/{busname}/speed") if busname else None
+            pci = re.search(r"/(\d{4}:\d{2}:[0-9a-f]{2}\.\d)/", realp)
+            halves.append({
+                "usb_port": sub,
+                "bus": busname,
+                "speed_mbps": speed,
+                "pci": pci.group(1) if pci else None,
+            })
+        ports[entry] = {
+            "halves": halves,
+            "partner_present": os.path.exists(os.path.join(base, f"{entry}-partner")),
+            "superspeed_wired": any(h["speed_mbps"] and h["speed_mbps"] > 480 for h in halves),
+        }
+    return ports
+
+
+def pci_descriptions():
+    out = run(["lspci"]) or ""
+    return {line.split()[0]: line.split(": ", 1)[-1] for line in out.splitlines() if ": " in line}
+
+
+def locate_connector(usb_id, topology):
+    """Which Type-C connector holds usb_id (e.g. '3-1')? Returns port name."""
+    if not topology or not usb_id or "-" not in usb_id:
+        return None
+    bus, port = usb_id.split("-", 1)
+    port = port.split(".")[0]
+    want = f"usb{bus}-port{port}"
+    for name, info in topology.items():
+        if any(h["usb_port"] == want for h in info["halves"]):
+            return name
+    return None
+
+
+def ntb_facts(ifname, driver):
+    """NCM aggregation buffers. Meaningless for rndis_host and ipheth."""
+    if driver != "cdc_ncm":
+        return None
+    d = f"/sys/class/net/{ifname}/cdc_ncm"
+    if not os.path.isdir(d):
+        return None
+    return {k: read_int(os.path.join(d, k)) for k in
+            ("rx_max", "tx_max", "tx_timer_usecs", "ndp_to_end")}
+
+
+def tcp_facts():
+    base = "/proc/sys/net/ipv4"
+
+    def triple(name):
+        raw = (read(f"{base}/{name}") or "").split()
+        return [int(x) for x in raw] if len(raw) == 3 else None
+
+    return {
+        "congestion_control": read(f"{base}/tcp_congestion_control"),
+        "slow_start_after_idle": read_int(f"{base}/tcp_slow_start_after_idle"),
+        "mtu_probing": read_int(f"{base}/tcp_mtu_probing"),
+        "available_congestion_control": (read(f"{base}/tcp_available_congestion_control") or "").split(),
+        # tcp_rmem[2] is the autotuning ceiling for a receive window, and so the
+        # number that decides whether one flow can fill the BDP. rmem_max only
+        # caps an explicit setsockopt(SO_RCVBUF), so it is the wrong knob to
+        # read here and a common source of bad advice.
+        "tcp_rmem": triple("tcp_rmem"),
+        "tcp_wmem": triple("tcp_wmem"),
+        "rmem_max": read_int("/proc/sys/net/core/rmem_max"),
+    }
+
+
+def qdisc(ifname):
+    out = run(["ip", "link", "show", "dev", ifname]) or ""
+    m = re.search(r"qdisc (\S+)", out)
+    return m.group(1) if m else None
+
+
+def counters(ifname):
+    out = run(["ip", "-s", "link", "show", ifname]) or ""
+    nums = re.findall(r"^\s+(\d+\s+\d+\s+\d+\s+\d+\s+\d+\s+\d+)\s*$", out, re.M)
+    res = {}
+    for label, row in zip(("rx", "tx"), nums):
+        vals = row.split()
+        res[label] = {"bytes": int(vals[0]), "packets": int(vals[1]),
+                      "errors": int(vals[2]), "dropped": int(vals[3])}
+    return res
+
+
+def other_links_up(ifname):
+    """Route-capable links other than the tether that are up - they invalidate
+    a measurement by silently carrying the traffic instead."""
+    out = run(["ip", "-br", "link"]) or ""
+    up = []
+    for line in out.splitlines():
+        parts = line.split()
+        if len(parts) < 2:
+            continue
+        name, state = parts[0], parts[1]
+        if name in ("lo", ifname) or name.startswith(("docker", "virbr", "veth", "br-")):
+            continue
+        if state == "UP" or "LOWER_UP" in line:
+            up.append(name)
+    return up
+
+
+def device_metadata(driver):
+    """Phone make/model/OS/radio. adb for Android, ideviceinfo for iOS."""
+    meta = {"source": None}
+    if driver == "ipheth":
+        out = run(["ideviceinfo"])
+        if out:
+            got = dict(l.split(": ", 1) for l in out.splitlines() if ": " in l)
+            meta.update(source="ideviceinfo",
+                        model=got.get("ProductType"), os=got.get("ProductVersion"),
+                        build=got.get("BuildVersion"))
+            meta["network"] = None
+            meta["network_note"] = "iOS exposes no equivalent of gsm.network.type - do not read it off the status bar"
+        return meta
+
+    out = run(["adb", "devices", "-l"])
+    if not out:
+        return meta
+    if "unauthorized" in out:
+        meta["source"] = "adb"
+        meta["error"] = "device unauthorized - accept the RSA prompt on the phone (this can bounce the tether, so do it before measuring)"
+        return meta
+    if "\tdevice" not in out and " device " not in out:
+        return meta
+
+    def prop(name):
+        v = run(["adb", "shell", "getprop", name])
+        return v.strip() if v else None
+
+    meta.update(source="adb",
+                make=prop("ro.product.manufacturer"),
+                model=prop("ro.product.model"),
+                os=prop("ro.build.version.release"),
+                network=prop("gsm.network.type"),
+                operator_radio=prop("gsm.operator.alpha"),
+                operator_sim=prop("gsm.sim.operator.alpha"))
+    return meta
+
+
+def slot_value(raw):
+    """gsm.* properties are comma-separated per SIM slot; return the live one."""
+    if not raw:
+        return None
+    parts = [p.strip() for p in raw.split(",")]
+    live = [p for p in parts if p and p.lower() not in ("unknown", "")]
+    return live[0] if live else None
+
+
+# --------------------------------------------------------------------------
+# measurement
+# --------------------------------------------------------------------------
+
+def curl_mbps():
+    out = run(["curl", "-s", "-o", "/dev/null", "-w", "%{speed_download}", ENDPOINT], timeout=120)
+    try:
+        return round(float(out.strip()) * 8 / 1e6, 1)
+    except (AttributeError, ValueError):
+        return None
+
+
+def measure():
+    res = {}
+    res["single_stream_mbps"] = [m for m in (curl_mbps() for _ in range(3)) if m is not None]
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        streams = [f.result() for f in [pool.submit(curl_mbps) for _ in range(4)]]
+    streams = [s for s in streams if s is not None]
+    res["parallel_streams_mbps"] = streams
+    res["parallel_4_aggregate_mbps"] = round(sum(streams), 1) if streams else None
+
+    out = run(["ping", "-c5", PING_HOST], timeout=60) or ""
+    m = re.search(r"= ([\d.]+)/([\d.]+)/([\d.]+)/([\d.]+) ms", out)
+    if m:
+        res["rtt_ms"] = dict(zip(("min", "avg", "max", "mdev"), (float(x) for x in m.groups())))
+    loss = re.search(r"([\d.]+)% packet loss", out)
+    res["packet_loss_pct"] = float(loss.group(1)) if loss else None
+    return res
+
+
+# --------------------------------------------------------------------------
+# diagnosis
+# --------------------------------------------------------------------------
+
+def diagnose(f):
+    """Apply the README rubric. Returns a list of (severity, title, body)."""
+    out = []
+    usb, link, tcp = f["usb"], f["link"], f["tcp"]
+    bos, topo = f["bos"], f["typec"]
+    res = f.get("results")
+
+    # --- validity gates, before anything else is worth reading ---
+    if not link["holds_default_route"]:
+        out.append(("blocker", "The tether does not hold the default route",
+                    f"Traffic is leaving via `{link['default_route_dev'] or 'no default route'}`, not "
+                    f"`{link['interface']}`. Any measurement taken now describes that path instead. "
+                    "Bring the other link down before measuring."))
+    if f["other_links_up"]:
+        out.append(("blocker", "Another route-capable link is up",
+                    f"`{'`, `'.join(f['other_links_up'])}` is up alongside the tether. If the tether "
+                    "drops mid-run, curl still succeeds and the result looks like a tethering "
+                    "measurement. Take these down first."))
+
+    c = f["counters"]
+    errs = sum(c[d]["errors"] + c[d]["dropped"] for d in c) if c else 0
+    if errs:
+        out.append(("problem", "Non-zero errors or drops on the interface",
+                    "This points at cable or power, not configuration. Reseat the cable, try a "
+                    "different one, and prefer a powered port. Counters are cumulative since the "
+                    "interface appeared, so re-plug to get a clean reading for one pass."))
+
+    # --- the bus ---
+    speed = usb.get("bus_speed_mbps")
+    if speed and speed <= 480:
+        if bos.get("available") and (bos.get("superspeed") or bos.get("superspeed_plus")):
+            rate = ", ".join(bos.get("rates") or []) or "SuperSpeed"
+            conn = f.get("connector")
+            wired = topo.get(conn, {}).get("superspeed_wired") if (topo and conn) else None
+            detail = (f"The device advertises {rate} in its BOS descriptor but enumerated at "
+                      f"{speed} Mbps.")
+            if wired is True:
+                detail += (f" Connector `{conn}` has an enumerated SuperSpeed half, so the host is "
+                           "declared capable and **the cable is the leading suspect** - an unmarked "
+                           "C-to-C cable is very often USB 2.0. Try a cable explicitly rated 5 or "
+                           "10 Gbps. If a known-good USB 3 storage device also fails to train "
+                           "SuperSpeed here, the fault is physical, behind the connector.")
+            elif wired is False:
+                detail += (f" Connector `{conn}` has **no SuperSpeed half bound to it**, so this "
+                           "port cannot do better regardless of cable. Use the other connector.")
+            else:
+                detail += (" Try a cable rated 5 or 10 Gbps, and a different port. A USB 3 storage "
+                           "device is the cheapest way to tell cable from port.")
+            out.append(("problem", "Device can do better than 480 Mbps", detail))
+        elif bos.get("available"):
+            out.append(("info", "480 Mbps is this device's own ceiling",
+                        "No SuperSpeed capability in the BOS descriptor, so no cable or port will "
+                        "raise it. `usb.cable` is moot for this handset rather than unverified."))
+        else:
+            out.append(("info", "Bus is at 480 Mbps and the device's ceiling is unknown",
+                        f"{bos.get('reason', 'BOS descriptor unavailable')}. Re-run with sudo to "
+                        "find out whether the device could have done better."))
+
+    if speed and speed <= 480 and res and res.get("parallel_4_aggregate_mbps"):
+        agg = res["parallel_4_aggregate_mbps"]
+        if agg >= 0.9 * USB2_BULK_CEILING:
+            out.append(("info", "Aggregate is at the USB 2.0 ceiling",
+                        f"{agg} Mbps against a realistic bulk ceiling near {USB2_BULK_CEILING} Mbps "
+                        "on a 480 Mbps bus. This figure is measuring the bus, not the carrier - "
+                        "treat it as a lower bound on what the WAN could do."))
+
+    # --- link ---
+    if link.get("mtu_max") == 1500:
+        out.append(("info", "No jumbo frames available",
+                    "`mtu_max` is 1500, so there is no MTU headroom to find here. Raising MTU is "
+                    "not an option on this tether."))
+
+    # --- NCM aggregation ---
+    ntb = f.get("ntb")
+    if ntb:
+        rx, tx = ntb.get("rx_max"), ntb.get("tx_max")
+        out.append(("info", "NCM aggregation buffers",
+                    f"`rx_max={rx}`, `tx_max={tx}`. Compare these against the device-advertised "
+                    "`dwNtbInMaxSize`/`dwNtbOutMaxSize`: **if they already match, the common "
+                    "\"raise these to 32768\" advice is a no-op** and changing them will do nothing."))
+
+    # --- TCP ---
+    cc = tcp.get("congestion_control")
+    if tcp.get("slow_start_after_idle") == 1:
+        out.append(("recommend", "Disable slow-start-after-idle",
+                    "`net.ipv4.tcp_slow_start_after_idle=1` makes an idle connection re-enter slow "
+                    "start, which costs throughput on bursty transfers over a high-latency radio. "
+                    "Set it to 0."))
+
+    # --- measured shape: the five README cases ---
+    if res and res.get("single_stream_mbps"):
+        s = res["single_stream_mbps"]
+        agg = res.get("parallel_4_aggregate_mbps")
+        rtt = res.get("rtt_ms") or {}
+        spread = max(s) / min(s) if min(s) else None
+        ratio = (agg / max(s)) if (agg and max(s)) else None
+        mdev, avg = rtt.get("mdev"), rtt.get("avg")
+        jittery = bool(mdev and avg and mdev > 0.3 * avg)
+
+        if spread and spread >= 2.0 and not jittery:
+            if cc != "bbr":
+                out.append(("recommend", f"Wide single-stream spread ({spread:.2f}x) with flat RTT - switch to BBR",
+                            f"Congestion control is `{cc}`, which reads random radio loss as congestion "
+                            "and halves the window. On a lossy radio this is worth up to 7x: the Pixel "
+                            "9a went from 15/44/116 Mbps under CUBIC to 125/153/106 under BBR. "
+                            "Set `net.ipv4.tcp_congestion_control=bbr`."))
+            else:
+                out.append(("info", f"Wide single-stream spread ({spread:.2f}x) with flat RTT, already on BBR",
+                            "The rubric's remedy for this shape is BBR and it is already applied, so "
+                            "the prescription is spent. With RTT flat and the aggregate well above the "
+                            "dip, this is more likely the radio briefly losing capacity than congestion "
+                            "control misbehaving. Re-run before concluding - three samples cannot "
+                            "separate a wide distribution from one bad transfer."))
+
+        if ratio and ratio < 1.35:
+            out.append(("info", f"Single-stream is close to the 4-stream aggregate ({ratio:.2f}x)",
+                        "Genuinely WAN-limited. Four flows found little more than one, so the "
+                        "constraint is upstream and there is nothing on this machine to tune."))
+
+        if spread and spread <= 1.3 and ratio and ratio >= 2.0:
+            bdp = max(s) * 1e6 / 8 * ((avg or 0) / 1000)      # bytes in flight
+            rmem = (tcp.get("tcp_rmem") or [0, 0, 0])[2]
+            body = ("Flat single-stream with four flows going far faster points at a per-flow "
+                    "limit - carrier shaping, or one flow unable to fill the bandwidth-delay "
+                    f"product ({bdp / 1024:.0f} KB in flight at {avg} ms). ")
+            if rmem and bdp and rmem < 2 * bdp:
+                body += (f"**The receive window is a live suspect**: `tcp_rmem` autotunes up to "
+                         f"{rmem:,} bytes, which is not comfortably above that BDP. Raise "
+                         f"`net.ipv4.tcp_rmem`'s third value to at least {int(4 * bdp):,} and "
+                         "re-run a single transfer.")
+            elif rmem and bdp:
+                body += (f"**The receive window is not the constraint**: `tcp_rmem` autotunes up to "
+                         f"{rmem:,} bytes, roughly {rmem / bdp:.0f}x the BDP, so one flow has ample "
+                         "window and still cannot go faster. That leaves carrier shaping as the "
+                         "leading explanation, and no host-side tuning will move it.")
+            body += " Either way, use parallel connections for bulk transfers on this link."
+            out.append(("recommend", f"Per-flow limit ({spread:.2f}x spread, aggregate {ratio:.2f}x best single)", body))
+
+        if jittery:
+            out.append(("recommend", f"High RTT jitter (mdev {mdev} ms on a {avg} ms average)",
+                        "If the average is unchanged from an idle baseline this is bufferbloat: the "
+                        "queue is being filled to find the limit, which is normal CUBIC behaviour on "
+                        "a link that is not dropping packets. It costs nothing for bulk transfer and "
+                        "a great deal for anything interactive. BBR trades a little throughput for a "
+                        "much shallower queue - the razr 2024 went from 16.5 ms mdev under BBR to "
+                        "2.1 ms under CUBIC on a clean radio, and the reverse holds on a lossy one. "
+                        + (f"The qdisc here is `{f.get('qdisc')}`, which is already a modern AQM."
+                           if f.get("qdisc") in ("fq_codel", "fq", "cake")
+                           else f"The qdisc here is `{f.get('qdisc')}` - switching to `fq_codel` "
+                                "or `cake` would drain the local queue faster, though it cannot "
+                                "touch a queue sitting in the phone or the carrier.")))
+
+        if res.get("packet_loss_pct"):
+            out.append(("problem", f"Packet loss of {res['packet_loss_pct']}%",
+                        "Loss on the ping path. On a radio this is expected in small amounts and is "
+                        "exactly what BBR handles better than CUBIC; sustained loss with zero "
+                        "interface errors is upstream, not the tether."))
+
+    if not res:
+        out.append(("info", "No measurements taken",
+                    "Run again with `--measure` for the throughput and latency half of the rubric. "
+                    "That costs roughly 56 MB of metered cellular data."))
+    return out
+
+
+# --------------------------------------------------------------------------
+# rendering
+# --------------------------------------------------------------------------
+
+SEVERITY = {"blocker": "BLOCKER", "problem": "Problem", "recommend": "Recommended", "info": "Note"}
+
+
+def render(f):
+    usb, link, tcp = f["usb"], f["link"], f["tcp"]
+    meta, bos, topo = f["meta"], f["bos"], f["typec"]
+    L = []
+    a = L.append
+
+    a(f"# Tether report - {f['generated']}")
+    a("")
+    if f.get("interface_note"):
+        a(f"> {f['interface_note']}")
+        a("")
+
+    a("## Connection")
+    a("")
+    a("| | |")
+    a("|---|---|")
+    a(f"| Interface | `{link['interface']}` |")
+    a(f"| Driver | `{f['driver']}` |")
+    a(f"| Operstate | `{link['operstate']}`" +
+      (" (normal for rndis_host; check flags instead)" if f['driver'] == 'rndis_host' and link['operstate'] == 'unknown' else "") + " |")
+    a(f"| IPv4 | `{link['ipv4']}` |")
+    a(f"| Gateway | `{link['gateway']}` |")
+    a(f"| IPv6 | {'yes' if link['ipv6'] else 'no'} |")
+    a(f"| MTU / max | {link['mtu']} / {link['mtu_max']} |")
+    nl = link["negotiated_link_mbps"]
+    a(f"| Negotiated link | {str(nl) + ' Mbps' if nl else 'not reported by this driver'} |")
+    a(f"| Holds default route | {'yes' if link['holds_default_route'] else '**no**'} |")
+    a("")
+
+    if meta.get("source"):
+        a("## Device")
+        a("")
+        if meta.get("error"):
+            a(f"`{meta['source']}`: {meta['error']}")
+        else:
+            a("| | |")
+            a("|---|---|")
+            for label, key in (("Make", "make"), ("Model", "model"), ("OS", "os"), ("Build", "build")):
+                if meta.get(key):
+                    a(f"| {label} | {meta[key]} |")
+            if meta.get("network"):
+                a(f"| Radio | `{meta['network']}` -> **{slot_value(meta['network'])}** |")
+            if meta.get("operator_radio") or meta.get("operator_sim"):
+                r, s = slot_value(meta.get("operator_radio")), slot_value(meta.get("operator_sim"))
+                agree = " (agree)" if r == s else " (**disagree - read both**)"
+                a(f"| Operator | radio `{r}`, SIM `{s}`{agree} |")
+            if meta.get("network_note"):
+                a(f"| Radio | unavailable - {meta['network_note']} |")
+        a("")
+        a(f"Read over `{meta['source']}`. Radio type is only trustworthy if read before *and* "
+          "after the transfers with both readings agreeing - a mid-session switch poisons any "
+          "carrier comparison drawn from it.")
+        a("")
+
+    a("## USB")
+    a("")
+    a("| | |")
+    a("|---|---|")
+    a(f"| Device | `{usb.get('usb_id')}` {usb.get('vendor_id')}:{usb.get('product_id')} - {usb.get('product') or '?'} |")
+    a(f"| bcdUSB | `{usb.get('bcd_usb')}` |")
+    a(f"| Bus speed | **{usb.get('bus_speed_mbps')} Mbps** " +
+      ("(USB 2.0)" if (usb.get("bus_speed_mbps") or 0) <= 480 else "(SuperSpeed)") + " |")
+    if bos.get("available"):
+        caps = []
+        if bos.get("superspeed"):
+            caps.append("SuperSpeed")
+        if bos.get("superspeed_plus"):
+            caps.append("SuperSpeedPlus")
+        a(f"| BOS capability | {', '.join(caps) if caps else '**none** - 480 is this device\'s own ceiling'}"
+          + (f" ({', '.join(bos['rates'])})" if bos.get("rates") else "") + " |")
+    else:
+        a(f"| BOS capability | unknown - {bos.get('reason')} |")
+    if f.get("connector"):
+        a(f"| Type-C connector | `{f['connector']}` |")
+    a("")
+
+    if topo:
+        a("### Host Type-C topology")
+        a("")
+        a("The kernel binds each connector to both its USB 2.0 and SuperSpeed ports at boot. "
+          "A connector with no SuperSpeed half cannot exceed 480 Mbps whatever the cable.")
+        a("")
+        a("| Connector | Halves | SuperSpeed wired | Attached |")
+        a("|---|---|---|---|")
+        pci = f["pci"]
+        for name, info in topo.items():
+            halves = ", ".join(
+                f"`{h['usb_port']}` {h['speed_mbps']}M"
+                + (f" [{pci.get(h['pci'], '').split('[')[0].strip()}]" if h.get("pci") and pci.get(h["pci"]) else "")
+                for h in info["halves"])
+            here = " **<- this device**" if name == f.get("connector") else ""
+            a(f"| `{name}` | {halves} | {'yes' if info['superspeed_wired'] else '**no**'} | "
+              f"{'partner present' if info['partner_present'] else 'nothing'}{here} |")
+        a("")
+
+    if f.get("ntb"):
+        a("### NCM aggregation (cdc_ncm)")
+        a("")
+        for k, v in f["ntb"].items():
+            a(f"- `{k}` = {v}")
+        a("")
+
+    a("## TCP")
+    a("")
+    a("| | |")
+    a("|---|---|")
+    a(f"| Congestion control | **`{tcp['congestion_control']}`** (available: {', '.join(tcp['available_congestion_control']) or '?'}) |")
+    a(f"| slow_start_after_idle | {tcp['slow_start_after_idle']} |")
+    a(f"| mtu_probing | {tcp['mtu_probing']} |")
+    if tcp.get("tcp_rmem"):
+        a(f"| tcp_rmem (min/default/**max**) | {tcp['tcp_rmem'][0]} / {tcp['tcp_rmem'][1]} / "
+          f"**{tcp['tcp_rmem'][2]:,}** |")
+    if tcp.get("tcp_wmem"):
+        a(f"| tcp_wmem (min/default/max) | {' / '.join(f'{x:,}' for x in tcp['tcp_wmem'])} |")
+    a(f"| net.core.rmem_max | {tcp['rmem_max']:,} (caps explicit SO_RCVBUF only) |")
+    a(f"| qdisc | `{f.get('qdisc')}` |")
+    a("")
+
+    c = f["counters"]
+    if c:
+        a("## Counters")
+        a("")
+        a("| | bytes | packets | errors | dropped |")
+        a("|---|---|---|---|---|")
+        for d in ("rx", "tx"):
+            if d in c:
+                a(f"| {d.upper()} | {c[d]['bytes']:,} | {c[d]['packets']:,} | {c[d]['errors']} | {c[d]['dropped']} |")
+        a("")
+        a("Cumulative since the interface appeared, not since this report. Re-plug for a clean "
+          "per-pass reading.")
+        a("")
+
+    res = f.get("results")
+    if res:
+        a("## Measurements")
+        a("")
+        s = res.get("single_stream_mbps") or []
+        a(f"- **Single-stream**: {' / '.join(str(x) for x in s)} Mbps"
+          + (f" - spread **{max(s) / min(s):.2f}x**" if s and min(s) else ""))
+        streams = res.get("parallel_streams_mbps") or []
+        if streams:
+            a(f"- **Parallel 4**: {' / '.join(str(x) for x in streams)} Mbps"
+              f" = **{res['parallel_4_aggregate_mbps']} Mbps** aggregate"
+              + (f", {res['parallel_4_aggregate_mbps'] / max(s):.2f}x the best single" if s else ""))
+        rtt = res.get("rtt_ms")
+        if rtt:
+            a(f"- **RTT**: min {rtt['min']} / avg {rtt['avg']} / max {rtt['max']} / "
+              f"**mdev {rtt['mdev']}** ms")
+        if res.get("packet_loss_pct") is not None:
+            a(f"- **Packet loss**: {res['packet_loss_pct']}%")
+        a("")
+        a(f"Endpoint `{ENDPOINT}`, fixed by README.md. Roughly 56 MB of metered data.")
+        a("")
+
+    a("## Findings and recommendations")
+    a("")
+    findings = f["findings"]
+    if not findings:
+        a("Nothing to report - no problem matched the rubric.")
+    order = {"blocker": 0, "problem": 1, "recommend": 2, "info": 3}
+    for sev, title, body in sorted(findings, key=lambda x: order.get(x[0], 9)):
+        a(f"### {SEVERITY[sev]}: {title}")
+        a("")
+        a(body)
+        a("")
+
+    a("---")
+    a("")
+    a("Rubric and field definitions come from `README.md`, which is authoritative. If an "
+      "observation fits none of the cases above, say so in the record rather than forcing it "
+      "into the nearest one.")
+    return "\n".join(L)
+
+
+# --------------------------------------------------------------------------
+
+def main():
+    ap = argparse.ArgumentParser(
+        description="Report on the current USB tether and recommend improvements.")
+    ap.add_argument("--measure", action="store_true",
+                    help="run the standard pass (3 single + parallel-4 + ping). "
+                         "Costs roughly 56 MB of metered cellular data.")
+    ap.add_argument("--interface", help="override tether interface autodetection")
+    ap.add_argument("--json", action="store_true", help="emit JSON instead of markdown")
+    ap.add_argument("-o", "--output", help="write to this file instead of stdout")
+    args = ap.parse_args()
+
+    ifname, note = find_interface(args.interface)
+    if not ifname:
+        sys.exit(f"tether-report: {note}. Is the phone attached and tethering enabled?")
+
+    driver = iface_driver(ifname)
+    f = {"generated": (run(["date", "-Is"]) or "").strip(),
+         "interface_note": note, "driver": driver}
+    f["link"] = link_facts(ifname)
+    f["usb"] = usb_facts(ifname)
+    f["bos"] = bos_capability(f["usb"].get("vendor_id"), f["usb"].get("product_id"))
+    f["typec"] = typec_topology()
+    f["pci"] = pci_descriptions()
+    f["connector"] = locate_connector(f["usb"].get("usb_id"), f["typec"])
+    f["ntb"] = ntb_facts(ifname, driver)
+    f["tcp"] = tcp_facts()
+    f["qdisc"] = qdisc(ifname)
+    f["meta"] = device_metadata(driver)
+    f["other_links_up"] = other_links_up(ifname)
+
+    if args.measure:
+        print(f"Measuring - roughly 56 MB of metered data...", file=sys.stderr)
+        f["results"] = measure()
+        f["counters"] = counters(ifname)   # read after the transfers, so they cover the pass
+    else:
+        f["counters"] = counters(ifname)
+
+    f["findings"] = diagnose(f)
+
+    text = json.dumps(f, indent=2, default=str) if args.json else render(f)
+    if args.output:
+        with open(args.output, "w") as fh:
+            fh.write(text + "\n")
+        print(f"wrote {args.output}", file=sys.stderr)
+    else:
+        print(text)
+
+
+if __name__ == "__main__":
+    main()

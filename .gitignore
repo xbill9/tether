@@ -1,3 +1,7 @@
 # Personal Claude Code settings (machine-specific, not shared)
 .claude/settings.local.json
 CLAUDE.local.md
+
+# Python
+__pycache__/
+*.pyc

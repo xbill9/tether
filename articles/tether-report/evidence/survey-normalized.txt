@@ -1,0 +1,20 @@
+distinct handsets after normalising make/model spelling: 14
+   3 record(s)  apple iphone 16e
+   7 record(s)  apple iphone 17 pro
+   2 record(s)  google pixel 7
+   1 record(s)  google pixel 8a
+   8 record(s)  google pixel 9a
+   3 record(s)  motorola razr 2024
+   2 record(s)  motorola razr plus 2023
+   1 record(s)  motorola razr plus 2024
+   2 record(s)  oneplus nord n200 5g
+   2 record(s)  samsung galaxy s24
+   2 record(s)  samsung galaxy s25
+   1 record(s)  samsung galaxy z flip4
+   4 record(s)  samsung galaxy z flip5
+   2 record(s)  samsung galaxy z flip6
+
+CUBIC spread, computed not quoted:
+  pixel 9a cubic  116 / 15 = 7.733x   (README prose says 7.8x)
+  pixel 9a bbr    153 / 106 = 1.443x
+  worst-case floor 15 -> 106 Mbps = 7.07x

@@ -1,0 +1,38 @@
+records: 40
+distinct phone models: 15
+  - Apple iPhone 16e (iPhone17,5)
+  - Apple iPhone 17 Pro (iPhone18,1)
+  - Google Pixel 7
+  - Google Pixel 8a
+  - Google Pixel 9a
+  - Motorola razr 2024
+  - Motorola razr 2024 (XT2453-3)
+  - OnePlus Nord N200 5G (DE2117)
+  - Samsung Galaxy S24 (SM-S921U1)
+  - Samsung Galaxy S25 (SM-S931U1)
+  - Samsung Galaxy Z Flip4 (SM-F721U1)
+  - Samsung Galaxy Z Flip5 (SM-F731U1)
+  - Samsung Galaxy Z Flip6 (SM-F741U1)
+  - motorola motorola razr plus 2023
+  - motorola motorola razr plus 2024
+carriers: ['AT&T', 'Google Fi']
+drivers: ['cdc_ncm', 'ipheth', 'rndis_host']
+bus speeds seen: ['480']
+verdicts: {'good': 22, 'poor': 8, 'usable': 10}
+congestion control: {'bbr': 38, 'cubic': 2}
+
+single-stream spread, widest 5:
+  7.73x  2026-09-05-pixel-9a-cubic.md
+  5.25x  2026-09-05-galaxy-s25-google-fi-retest.md
+  4.64x  2026-09-05-motorola-razr-plus-2023-google-fi-retest.md
+  4.4x  2026-09-05-pixel-9a-att-usba.md
+  3.78x  2026-09-05-pixel-9a-google-fi-retest.md
+single-stream spread, tightest 5:
+  1.06x  2026-09-05-iphone-17-pro-att-usba-retest.md
+  1.06x  2026-09-05-pixel-9a-att.md
+  1.07x  2026-09-05-iphone-17-pro-att.md
+  1.08x  2026-09-05-galaxy-z-flip5-google-fi-retest.md
+  1.08x  2026-09-05-galaxy-z-flip5-google-fi-usba.md
+
+median spread across 40 records with 3 runs: 1.23x
+all single-stream runs: n=120 min=5.336 max=163.0 median=69.8

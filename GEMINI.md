@@ -1,6 +1,6 @@
-# CLAUDE.md
+# GEMINI.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Gemini when working with code in this repository.
 
 ## What this is
 
@@ -14,7 +14,7 @@ test code. Do not go looking for a test framework.
 The format spec, full field reference and diagnostic rubric are in the README
 and are authoritative:
 
-@README.md
+README.md
 
 ## Adding a record
 

@@ -34,7 +34,7 @@ the hard way on 2026-09-05:
    uninterpretable. Two measured cases, both on 2026-09-05:
 
    - **On a lossy radio, it changes throughput by 7x.** The Pixel 9a under CUBIC
-     ran 15 / 44 / 116 Mbps, a 7.8x spread; under BBR, 125 / 153 / 106, a 1.4x
+     ran 15 / 44 / 116 Mbps, a 7.7x spread; under BBR, 125 / 153 / 106, a 1.4x
      spread. CUBIC was reading random radio loss as congestion and halving the
      window.
    - **On a clean radio, it barely changes throughput and transforms latency.**

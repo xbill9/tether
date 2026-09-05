@@ -8,7 +8,7 @@ the spread is the finding.
 | 2026-09-05 | [Galaxy Z Flip4](tests/2026-09-05-galaxy-z-flip4-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 38.540 / 33.193 / 33.373 | 71.336 | 28.202 ms | good |
 | 2026-09-05 | [Pixel 8a](tests/2026-09-05-pixel-8a-google-fi.md) | Google Fi | cdc_ncm | 2.0 | bbr | 58.372 / 61.339 / 67.936 | 167.951 | 28.278 ms | good |
 | 2026-09-05 | [Galaxy Z Flip6](tests/2026-09-05-galaxy-z-flip6-google-fi-retest.md) | Google Fi | rndis_host | 2.0 | bbr | 97.583 / 109.760 / 105.418 | 217.599 | 39.783 ms | good |
-| 2026-09-05 | [Motorola razr 2024](tests/2026-09-05-motorola-razr-2024-google-fi-retest.md) | Google Fi | rndis_host | 2.0 | bbr | 104.088 / 98.389 / 116.914 | 233.831 | 35.710 ms | good |
+| 2026-09-05 | [motorola razr 2024](tests/2026-09-05-motorola-razr-2024-google-fi-retest.md) | Google Fi | rndis_host | 2.0 | bbr | 104.088 / 98.389 / 116.914 | 233.831 | 35.710 ms | good |
 | 2026-09-05 | [Pixel 7](tests/2026-09-05-pixel-7-google-fi-usba.md) | Google Fi | cdc_ncm | 2.0 | bbr | 52.565 / 50.592 / 47.243 | 65.495 | 78.501 ms | good |
 | 2026-09-05 | [Pixel 7](tests/2026-09-05-pixel-7-google-fi.md) | Google Fi | cdc_ncm | 2.0 | bbr | 69.700 / 67.228 / 76.984 | 112.040 | 122.243 ms | good |
 | 2026-09-05 | [Galaxy S25](tests/2026-09-05-galaxy-s25-google-fi-retest.md) | Google Fi | rndis_host | 2.0 | bbr | 30.409 / 20.381 / 5.787 | 5.050 | 44.712 ms | poor |
