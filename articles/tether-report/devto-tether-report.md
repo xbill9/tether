@@ -145,8 +145,9 @@ random loss. So the worse the radio, the more this setting should be worth — a
 the people on the worst radios are the ones for whom a free fix matters most.
 
 I have not measured that. Every record in this survey was taken on Google Fi or
-AT&T, in one location, on networks good enough to return 20 to 160 Mbps. Nothing
-here was collected anywhere under-served, and I am not going to claim otherwise.
+AT&T, in one location, on networks whose 120 individual transfers ran from 5.3 to
+163.0 Mbps with a median of 69.8. Nothing here was collected anywhere
+under-served, and I am not going to claim otherwise.
 What I can say is that the mechanism does not depend on geography, that the fix
 costs nothing to try, and that `tether-report` will tell you for free whether
 your link has the shape the fix addresses.
@@ -155,9 +156,13 @@ your link has the shape the fix addresses.
 
 Across 40 records and 14 handsets:
 
-- **Every single record enumerated at 480 Mbps.** Fourteen phones, three drivers,
-  four cables, three physical ports, and not one USB 3.0 negotiation. The bus is
-  a more consistent ceiling than the radio.
+- **Every single record enumerated at 480 Mbps.** Fourteen handsets, three
+  drivers, and not one USB 3.0 negotiation anywhere in 40 records. The bus is a
+  more consistent ceiling than the radio. On the one phone chased hardest — an
+  iPhone 17 Pro that advertises SuperSpeedPlus — 480 survived four cables and
+  three physical ports, and that hunt is still open in the repo. No cable tried
+  was verifiably wired for SuperSpeed, so those four results may be closer to one
+  result repeated.
 - **The driver is not the story.** `cdc_ncm`, `rndis_host` and `ipheth` all
   appear at both ends of the results.
 - **The radio label predicts nothing.** Two Galaxy S24 units differing only in
