@@ -195,14 +195,16 @@ a value from another record.
 Fill the four body sections as analysis, not a transcript:
 
 - **Setup** — how it connected and what had to be done to bring it up.
-- **Observations** — what the numbers *mean*. Apply the README's rubric: wide
-  single-stream spread with flat RTT is congestion control collapsing on radio
-  loss; single ≈ parallel aggregate is genuinely WAN-limited; aggregate near
-  300 Mbps on a 480 Mbps bus is the USB 2.0 ceiling, i.e. a cable problem.
-  If the shape fits none of the three, **say so explicitly** rather than forcing
-  it into the nearest one — a near-flat single-stream spread with aggregate far
-  above it, for instance, points at a per-flow limit that the rubric does not
-  yet cover.
+- **Observations** — what the numbers *mean*. Apply the README's rubric, which
+  now has five cases and is authoritative — read it rather than working from
+  this summary. In outline: wide spread with flat RTT is congestion control
+  collapsing on radio loss; single ≈ aggregate is WAN-limited; aggregate near
+  300 Mbps on a 480 Mbps bus is the USB 2.0 ceiling (cable *or host port*);
+  high `mdev` with an unchanged average is bufferbloat; near-flat spread with
+  aggregate far above it is a per-flow limit. **Read `mdev`, not just the
+  average** — the razr's CUBIC pass moved jitter eightfold while the average RTT
+  did not budge. If the shape fits none of the five, **say so explicitly**
+  rather than forcing it into the nearest one.
 - **Issues** — problems hit and how they were resolved. Leave empty if none.
 - **Follow-ups** — anything untested or worth retrying.
 
