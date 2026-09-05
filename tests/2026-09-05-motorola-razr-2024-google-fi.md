@@ -4,10 +4,10 @@ date: 2026-09-05
 phone:
   make: Motorola
   model: razr 2024 (XT2453-3)
-  os:                 # TODO not readable from the host - no adb, no MTP mount; needs Settings > About phone
+  os: Android 16      # read off the device, not from the host
 carrier:
   name: Google Fi
-  network:            # TODO not readable from the host - needs the phone's status bar / About phone
+  network: 5G         # read off the device, not from the host
 usb:
   vendor_id: "22b8"
   product_id: "2e24"
@@ -57,6 +57,9 @@ ambiguity about which interface the transfers used.
 The USB descriptor reports the product only as `motorola razr 2024`; the full
 model number **XT2453-3** was supplied by the operator, not read from the
 device. This is the US unlocked variant.
+
+OS (Android 16) and radio (5G) were likewise read off the phone during the
+session - neither is visible from the host over a tether-only USB function.
 
 Bound to `rndis_host`, not NCM. Two consequences for this format:
 
@@ -117,14 +120,15 @@ tethering, not SuperSpeed on the port in general.
 
 ## Follow-ups
 
-- OS version and radio type, both readable only on the phone.
 - Worth a second pass at a different time of day. This one caught an unusually
   clean radio - 2.1 ms mdev is the best in the log - so 104/117/140 may be a
   favourable sample rather than typical.
 - The RNDIS-vs-NCM comparison is confounded: different phone, different radio
   conditions, possibly a different cable. It is suggestive that the tightest
   numbers here came from the RNDIS device, but nothing in this record isolates
-  the driver as the cause.
+  the driver as the cause. It is now known that this phone was on **5G**,
+  while the radio the Pixel used was never recorded - so the two cannot be
+  assumed to have been on comparable radios either.
 - No CUBIC baseline exists for this phone. If the driver comparison matters,
   a CUBIC pass on the razr would show whether RNDIS is inherently steadier or
   whether this radio was simply better behaved.
