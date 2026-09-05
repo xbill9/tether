@@ -5,6 +5,7 @@ the spread is the finding.
 
 | Date | Phone | Carrier | Driver | Bus | CC | Single (Mbps) | Par-4 | RTT avg | Verdict |
 |---|---|---|---|---|---|---|---|---|---|
+| 2026-09-05 | [Motorola razr 2024](tests/2026-09-05-motorola-razr-2024-google-fi-cubic.md) | Google Fi | rndis_host | 2.0 | cubic | 135 / 121 / 163 | 238 | 37.7 ms | usable |
 | 2026-09-05 | [Galaxy S24](tests/2026-09-05-galaxy-s24-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 98 / 112 / 113 | 230 | 36.4 ms | good |
 | 2026-09-05 | [Galaxy S25](tests/2026-09-05-galaxy-s25-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 70 / 112 / 61 | 238 | 31.4 ms | good |
 | 2026-09-05 | [Galaxy Z Flip6](tests/2026-09-05-galaxy-z-flip6-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 102 / 121 / 113 | 232 | 23.0 ms | good |

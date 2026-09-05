@@ -157,6 +157,8 @@ USB debugging toggle, so the connection under test was not disturbed.
   the driver as the cause. This phone is now confirmed to have been on **5G
   standalone**, while the radio the Pixel used was never recorded - so the two
   cannot be assumed to have been on comparable radios either.
-- No CUBIC baseline exists for this phone. If the driver comparison matters,
-  a CUBIC pass on the razr would show whether RNDIS is inherently steadier or
-  whether this radio was simply better behaved.
+- ~~No CUBIC baseline exists for this phone.~~ Done - see
+  [2026-09-05-motorola-razr-2024-google-fi-cubic](2026-09-05-motorola-razr-2024-google-fi-cubic.md),
+  which changed congestion control alone. CUBIC was **faster** here (mean 140
+  against 120) with an identical 1.34x spread, but jitter went from 2.1 ms to
+  16.5 ms mdev. The steadiness in this record is BBR's doing, not RNDIS's.
