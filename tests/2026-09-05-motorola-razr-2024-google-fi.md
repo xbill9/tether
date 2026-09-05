@@ -4,10 +4,10 @@ date: 2026-09-05
 phone:
   make: Motorola
   model: razr 2024 (XT2453-3)
-  os: Android 16      # read off the device, not from the host
+  os: Android 16      # operator-supplied, confirmed over adb (ro.build.version.release=16, sdk 36)
 carrier:
-  name: Google Fi
-  network: 5G         # read off the device, not from the host
+  name: Google Fi     # confirmed over adb (gsm.operator.alpha)
+  network: 5G (NR SA) # operator-supplied as 5G, refined over adb (gsm.network.type=NR_SA)
 usb:
   vendor_id: "22b8"
   product_id: "2e24"
@@ -113,10 +113,38 @@ egress or a different radio site, not a different network.
 
 None. Nothing had to be done to bring it up.
 
-The caveat on the SuperSpeed finding: the descriptors read above are those of
-the **tether function as currently enumerated** (`22b8:2e24`). A phone can
-present different descriptors in other USB modes, so this rules out SuperSpeed
-tethering, not SuperSpeed on the port in general.
+The caveat on the SuperSpeed finding was that the descriptors read above are
+those of the **tether function as enumerated during the test** (`22b8:2e24`),
+and a phone can present different descriptors in other USB modes - so it ruled
+out SuperSpeed tethering, not SuperSpeed on the port in general.
+
+**Partly settled afterwards.** Enabling USB debugging moved the phone to a
+second USB configuration, RNDIS+ADB composite at `22b8:2e25`, and that one is
+also `bcdUSB 2.00` with no BOS descriptor and no SuperSpeed capability. Two
+independent configurations agreeing makes it very likely the razr's USB port is
+USB 2.0 only, rather than this being an artefact of the tether function. Not
+proof - other modes exist - but the remaining doubt is small.
+
+## Post-test: metadata confirmed over adb
+
+`adb` was installed later the same day and this phone authorised, which allowed
+the operator-supplied values to be checked against the device rather than taken
+on trust. All of them held:
+
+    ro.build.version.release  16                -> os: Android 16
+    gsm.network.type          Unknown,NR_SA     -> network: 5G, refined to NR SA
+    gsm.operator.alpha        ,Google Fi        -> carrier: Google Fi
+    ro.product.model          motorola razr 2024
+
+`network` has been refined from `5G` to `5G (NR SA)` - standalone 5G, not
+non-standalone riding an LTE anchor - which is a meaningful distinction for
+latency and was not knowable when the record was written. The model number
+`XT2453-3` remains operator-supplied: `ro.product.model` carries the marketing
+name only.
+
+No measurement changed. These properties were read after the pass, not during
+it; the interface, MAC, address and default route were all unchanged across the
+USB debugging toggle, so the connection under test was not disturbed.
 
 ## Follow-ups
 
@@ -126,9 +154,9 @@ tethering, not SuperSpeed on the port in general.
 - The RNDIS-vs-NCM comparison is confounded: different phone, different radio
   conditions, possibly a different cable. It is suggestive that the tightest
   numbers here came from the RNDIS device, but nothing in this record isolates
-  the driver as the cause. It is now known that this phone was on **5G**,
-  while the radio the Pixel used was never recorded - so the two cannot be
-  assumed to have been on comparable radios either.
+  the driver as the cause. This phone is now confirmed to have been on **5G
+  standalone**, while the radio the Pixel used was never recorded - so the two
+  cannot be assumed to have been on comparable radios either.
 - No CUBIC baseline exists for this phone. If the driver comparison matters,
   a CUBIC pass on the razr would show whether RNDIS is inherently steadier or
   whether this radio was simply better behaved.

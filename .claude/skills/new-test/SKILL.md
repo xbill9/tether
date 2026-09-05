@@ -120,6 +120,13 @@ adb shell getprop gsm.operator.alpha        # what the radio reports as the oper
   what is installed now.
 - Mark operator-supplied values in the frontmatter comment, so they are never
   mistaken for host observations.
+- **Enabling USB debugging can change the device's product ID.** The razr moved
+  from `22b8:2e24` (tether only) to `22b8:2e25` (RNDIS+ADB composite) - a
+  different USB configuration with its own descriptors. So read
+  `usb.vendor_id` / `usb.product_id` and the BOS descriptor **in the same state
+  the transfers will run in**, and say in the body which state that was.
+  Descriptors collected with adb on do not necessarily describe the device that
+  was measured with adb off.
 
 USB product strings are vendor-dependent: Google and Motorola put the marketing
 name in the descriptor, Samsung reports only `SAMSUNG_Android`. On Samsung the
