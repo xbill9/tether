@@ -5,6 +5,8 @@ the spread is the finding.
 
 | Date | Phone | Carrier | Driver | Bus | CC | Single (Mbps) | Par-4 | RTT avg | Verdict |
 |---|---|---|---|---|---|---|---|---|---|
+| 2026-09-06 | [Pixel 9a](tests/2026-09-06-pixel-9a-att-superspeed.md) | AT&T | cdc_ncm | 3.0 | cubic | 49.091 / 51.870 / 4.387 | 8.215 | 21.122 ms | poor |
+| 2026-09-06 | [iPhone 17 Pro](tests/2026-09-06-iphone-17-pro-att-superspeed.md) | AT&T | ipheth | 3.0 | cubic | 10.872 / 19.379 / 16.698 | 21.246 | 85.105 ms | usable |
 | 2026-09-05 | [Galaxy Z Flip4](tests/2026-09-05-galaxy-z-flip4-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 38.540 / 33.193 / 33.373 | 71.336 | 28.202 ms | good |
 | 2026-09-05 | [Pixel 8a](tests/2026-09-05-pixel-8a-google-fi.md) | Google Fi | cdc_ncm | 2.0 | bbr | 58.372 / 61.339 / 67.936 | 167.951 | 28.278 ms | good |
 | 2026-09-05 | [Galaxy Z Flip6](tests/2026-09-05-galaxy-z-flip6-google-fi-retest.md) | Google Fi | rndis_host | 2.0 | bbr | 97.583 / 109.760 / 105.418 | 217.599 | 39.783 ms | good |
@@ -48,20 +50,21 @@ the spread is the finding.
       ([record](tests/2026-09-05-iphone-16e-google-fi.md)). **It binds `ipheth`**,
       not `cdc_ncm`. Also: `/28` subnet rather than `/24`, and `carrier.network`
       is unobtainable on iOS - there is no adb equivalent.
-- [ ] **Plug a USB 3 flash drive into the USB-A port `3-3` - stop trying
-      cables.** The iPhone 17 Pro advertises SuperSpeedPlus at 10 Gb/s and has now
-      enumerated at 480 across **four cables** and **three physical ports**
-      (`3-2`, `3-1`, `3-3`), on a host whose `usb2` (20 Gb/s) and `usb4`
-      (10 Gb/s) root hubs are working and have never had a device attached
-      (untracked record). **No cable tried is verifiably wired for
-      SuperSpeed**, and unmarked cables are overwhelmingly
-      USB 2.0, so four results are close to one result repeated. **A USB 3 flash
-      drive with a fixed A connector needs no cable at all** - the first test in
-      this investigation that removes the cable variable rather than swapping it.
-      Trains SuperSpeed means every cable so far was USB 2.0; stays at 480 across
-      a cable-free attach and the fault is in the host. (The razr 2024 and
-      iPhone 16e advertise no SuperSpeed, so 480 is genuinely their ceiling and
-      they cannot help answer this.)
+- [x] ~~**Plug a USB 3 flash drive into the USB-A port `3-3` - stop trying
+      cables.**~~ **Moot as of 2026-09-06 - the cables were the problem.** A new
+      USB-A to USB-C cable on the *same* receptacle trained SuperSpeed and the
+      iPhone 17 Pro enumerated at **5000**
+      ([record](tests/2026-09-06-iphone-17-pro-att-superspeed.md)). `4-2` is
+      `usb4-port2`, whose peer `usb3-port3` is the USB-A receptacle tested at
+      480 on 2026-09-05 at 14:07 - same `location=0x80000301`, so the device
+      moved hubs only because it started training SuperSpeed. The flash drive
+      was meant to decide between "every cable so far was USB 2.0" and "the
+      fault is in the host"; a cable swap answered it without needing a
+      cable-free attach. **The four-cable, three-port hunt was chasing a ceiling
+      that was never binding: the same phone on a 5000 Mbps bus managed 21 Mbps
+      aggregate, and the pass came out WAN-limited.** Still untried: a Gen 2
+      cable - the device advertises USB 3.2 on a 10 Gb/s port but trained at
+      5 Gb/s.
 - [x] ~~**Find the Thunderbolt 4 port.**~~ **Found 2026-09-05 in
       `/sys/class/typec`, and it had already been tested.** The kernel binds each
       Type-C connector to both its USB ports at boot: `port0` = `3-1` + `4-1`
@@ -91,19 +94,62 @@ the spread is the finding.
 - [ ] Capture `gsm.network.type` during a pass on the four records that still
       have `carrier.network` blank - or accept that they cannot be filled
       retrospectively and leave them.
-- [ ] **Re-run the AT&T Pixel 9a - AT&T recovered, it did not degrade.** Across
-      three iPhone 17 Pro passes between 13:15 and 13:26, aggregate climbed
-      73 -> 85 -> 101 Mbps, RTT avg fell 103.6 -> 54.2 -> 45.9 ms and `mdev` fell
-      110.3 -> 30.9 -> 9.3 ms, heading back toward the 178 / 38.0 / 6.7 baseline
-      set at 12:40 (untracked record).
-      A fourth pass at 14:12 continued the climb to 130 Mbps
-      (untracked record), still only 73% of
-      the 12:40 baseline, on a fourth cable and a third port - four combinations,
-      one monotonic recovery.
-      **Each cable swap coincided with a step of that recovery, which makes the
-      cables look causal when time is the variable that moved.** One Pixel pass
-      would confirm the recovery is carrier-wide; lower urgency than it looked,
-      since the 13:15 collapse now reads as the bottom of a dip.
+- [x] ~~**Re-run the AT&T Pixel 9a - AT&T recovered, it did not degrade.**~~
+      **Done 2026-09-06, and the recovery framing does not survive it**
+      ([record](tests/2026-09-06-pixel-9a-att-superspeed.md)). A day later, on a
+      SuperSpeed bus, the same phone on the same DHCP lease gave
+      49.091 / 51.870 / **4.387** with an aggregate of 8.215 Mbps - still `poor`.
+      The 2026-09-05 climb was real, but it was not a carrier-wide recovery that
+      stuck.
+      **Two hypotheses died with this pass.** The USB 2.0 ceiling: same
+      receptacle, bus 480 -> 5000, negotiated link 425 -> 3750, and the aggregate
+      moved only 5.054 -> 8.215. And congestion control: the collapse reproduces
+      under CUBIC here and under BBR on 2026-09-05, so it is **not** the README's
+      first case, however much the wide-spread-with-flat-RTT shape resembles it.
+      **`mdev` was 2.766 ms and the average 21.1 ms** - the best latency of any
+      AT&T record in this log, recorded while throughput collapsed. Nothing is
+      queueing. What is left is a link that degrades under sustained load within
+      a single pass and does not recover; the two items below test that.
+- [ ] **Test the Pixel 9a decay hypothesis: three singles, five minutes idle,
+      three more.** Both collapsing AT&T passes were fast at the start and slow
+      from partway through, staying slow for everything after - the parallel test
+      included, since it is simply the last thing in the pass. If the second set
+      recovers, a volume-triggered carrier throttle is live; if not, it is not
+      volume. Costs 24 MB and replaces a hypothesis currently resting on two
+      uncontrolled passes.
+- [ ] **Run the parallel test *before* the singles, once.** Every record in this
+      log runs singles then parallel, so "the link decayed mid-pass" and "four
+      flows genuinely do worse than one" are indistinguishable in all of them -
+      including the three passes where the aggregate came out *below* the
+      slowest single. Reversing the order on one pass separates them for the
+      whole log. Applies to the skill, not to one phone.
+- [ ] **Re-run the iPhone 17 Pro SuperSpeed pass under BBR.** The 2026-09-06
+      record moved two variables at once: the bus went 480 -> 5000 *and* the
+      host's TCP settings reverted to stock (`cubic` / `slow_start_after_idle=1`
+      / `mtu_probing=0`), where every 2026-09-05 record ran `bbr` / `0` / `1`.
+      Until there is a matching BBR pass, that record cannot be compared with
+      any iPhone number already in the log. The 1.10x aggregate-to-single ratio
+      argues congestion control is not the limiter, but that is an inference,
+      not a measurement.
+- [x] ~~**Reinstall `adb` *and* `libimobiledevice-utils`.**~~ **Done
+      2026-09-06.** The host changed between 2026-09-05 and 2026-09-06 and
+      neither tool survived it; `adb 1:34.0.5-12` and
+      `libimobiledevice-utils 1.3.0+git20250228-2` are now installed.
+      `phone.os` has been **backfilled** on
+      [the Pixel 9a record](tests/2026-09-06-pixel-9a-att-superspeed.md)
+      (Android 17, CP41.260814.003.B1 - independently identical to 2026-09-05).
+      **Two gaps remain and neither is fixable by installing anything.** That
+      record's `carrier.network` stays blank: the skill requires it read before
+      *and* after the transfers, so a value read afterwards cannot describe the
+      pass - which leaves a radio switch unexcluded as an explanation for the
+      collapse. And the 2026-09-06 iPhone record still carries operator-supplied
+      `phone.model` / `phone.os` / `carrier.name`; `ideviceinfo` can correct
+      model and build whenever that handset is next attached, but its
+      `carrier.network` is unobtainable on iOS regardless.
+      **Note the host is not a stable given.** Two tools vanished between
+      consecutive days of testing, silently, and were noticed only when a record
+      needed them. Worth checking the stack is present before a pass rather than
+      during one.
 - [ ] **Re-run the two Galaxy S24 units back to back.** They differ only in
       radio (NR_SA vs LTE) and the LTE unit won on every measure, including
       14.4 ms of RTT. Running them at the same moment removes the
