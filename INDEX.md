@@ -104,12 +104,26 @@ the spread is the finding.
       against a 33 MB `tcp_rmem` ceiling). Server-side cwnd *does* ramp -
       53 -> 702 packets across one transfer, zero loss, read from Cloudflare's
       `server-timing: cfL4` header - but that was measured on the slow run, so
-      it does not close the argument. All three earlier sightings remain
-      unestablished.
-- [ ] **Settle transfer-size dependence with interleaved sizes.** Alternate
-      8 MB and 32 MB (8/32/8/32/8/32) so link variation hits both equally.
-      ~120 MB metered. Nothing cheaper separates a size effect from a link that
-      moved 4.8x at fixed size on 2026-09-06.
+      it does not close the argument. **Superseded in part by the interleaved
+      test below: the transfer-size cause is now established, though the
+      startup cost is larger than slow-start explains.** All three earlier
+      sightings remain unestablished as per-flow limits.
+- [x] **Settle transfer-size dependence with interleaved sizes** - done
+      2026-09-06, and **the size effect is real.** Six transfers alternating
+      8 and 32 MB across 3.89 s
+      ([record](tests/2026-09-06-iphone-17-pro-att-usbc-port.md)): 8 MB mean
+      158.75 Mbps, 32 MB mean 361.96 Mbps, ratio 2.28x, every 32 MB run beat
+      the 8 MB run beside it, and the two sets do not overlap (best 8 MB 176.9
+      < worst 32 MB 354.6). The 20 MB outlier of 73 Mbps was the link
+      collapsing at that moment, not evidence about size - a fit to the
+      interleaved durations predicts 287 Mbps there.
+- [ ] **Explain the startup cost.** The interleaved fit gives an asymptote of
+      637 Mbps and a fixed cost of 0.305 s - about 10 RTTs at 29.6 ms, where
+      slow-start to the ~503 KB BDP should need roughly 6. Textbook slow-start
+      does not account for it. Cloudflare also reports `cwnd=53` at the start
+      of every fresh connection rather than 10, and the server window reached
+      702 packets with zero loss, both read from `server-timing: cfL4`. What
+      else is in those 0.3 s is open.
 - [ ] **`speed.cloudflare.com/__down` refuses some sizes.** 12, 15, 16, 16.78
       and 17 MB return `403 Forbidden` with a 1-byte body; 8, 20, 24 and 32 MB
       return 200. Reproduced interleaved, so not rate limiting. Cause unknown -

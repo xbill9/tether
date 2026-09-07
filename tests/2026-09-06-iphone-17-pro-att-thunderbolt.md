@@ -135,13 +135,20 @@ wrong**; see the correction below.
 [USB-C port pass](2026-09-06-iphone-17-pro-att-usbc-port.md).** Two claims above
 were overstated and are retracted here rather than edited away:
 
-1. **"The gap is an artifact of the fixed 8 MB transfer size" is not
-   established.** It was tested. A fixed-overhead model fitted to the 8 MB and
-   32 MB points predicts 267 Mbps at 20 MB; the measured value was **73.0
-   Mbps**, below even a no-size-dependence prediction. The same link produced
-   73 and 351 Mbps minutes apart at a fixed size - 4.8x variation, larger than
-   the size effect it was invoked to explain - so the 8-vs-32 comparison was
-   never controlled for time. Settling it needs interleaved sizes.
+1. **"The gap is an artifact of the fixed 8 MB transfer size" was not
+   established at the time.** A fixed-overhead model fitted to the 8 MB and
+   32 MB points predicted 267 Mbps at 20 MB; the measured value was **73.0
+   Mbps**. The same link produced 73 and 351 Mbps minutes apart at a fixed
+   size, so the original 8-vs-32 comparison was never controlled for time.
+
+   **Re-established later the same evening by an interleaved test** (see the
+   [USB-C port record](2026-09-06-iphone-17-pro-att-usbc-port.md)): 8 and 32 MB
+   alternated across 3.89 s gave means of 158.75 and 361.96 Mbps with no
+   overlap between the sets. The size effect is real; the 20 MB sample was the
+   link collapsing at that moment. So the conclusion here was right and the
+   evidence for it was not - and what remains open is the *mechanism*, since
+   the fitted 0.305 s startup cost is about 10 RTTs where slow-start should
+   need 6.
 2. **`ss` did not fail for the reason stated.** On a download the local socket's
    cwnd is *our* send window, which carries only ACKs and sits at 10 regardless;
    the window that matters is the server's. Cloudflare publishes it in the

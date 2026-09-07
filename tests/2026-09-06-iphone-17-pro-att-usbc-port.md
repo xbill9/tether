@@ -145,6 +145,49 @@ This is direct evidence that a window ramp exists and is large. It does **not**
 establish that the ramp explains the 8-vs-32 MB gap, because the 20 MB transfer
 in which it was measured was the slow one.
 
+### Interleaved 8/32 MB - the size effect is real after all
+
+The follow-up above was run the same evening on this port, and it settles the
+question the 20 MB sample had reopened. Six transfers on fresh connections,
+alternating 8 and 32 MB, **the whole experiment spanning 3.89 seconds** so that
+link variation cannot fall differently on the two sizes:
+
+| # | size | t+ | duration | throughput |
+|---|---|---|---|---|
+| 1 | 8 MB | 0.51 s | 0.418 s | 153.3 Mbps |
+| 2 | 32 MB | 1.32 s | 0.722 s | 354.6 Mbps |
+| 3 | 8 MB | 1.87 s | 0.438 s | 146.1 Mbps |
+| 4 | 32 MB | 2.66 s | 0.701 s | 365.1 Mbps |
+| 5 | 8 MB | 3.09 s | 0.362 s | 176.9 Mbps |
+| 6 | 32 MB | 3.89 s | 0.699 s | 366.3 Mbps |
+
+8 MB mean **158.75** Mbps (1.21x spread); 32 MB mean **361.96** Mbps (1.03x
+spread); ratio **2.28x**. Every 32 MB transfer beat the 8 MB transfer next to it
+- 3 of 3 pairs - and **the distributions do not overlap at all**: the fastest
+8 MB run (176.9) is below the slowest 32 MB run (354.6).
+
+**Transfer size determines the result here. That is now established**, and the
+retraction in the [Thunderbolt
+record](2026-09-06-iphone-17-pro-att-thunderbolt.md) went one step too far. The
+earlier uncontrolled comparison happened to reach the right conclusion for
+inadequate reasons; this design reaches it for adequate ones.
+
+It also puts the 20 MB sample in its place. A fixed-overhead fit to these
+durations - 8 MB in 0.4058 s, 32 MB in 0.7074 s, four times the bytes in 1.74x
+the time - gives an asymptote of **637 Mbps** and a fixed cost of **0.305 s**,
+which predicts 287 Mbps at 20 MB. The 20 MB run measured 73.0. So that sample
+was a genuine collapse of the link at that moment, not evidence about size; the
+link can fall by 4.8x on its own, which is exactly why the interleaving was
+necessary.
+
+**The mechanism is still not pinned.** A 0.305 s fixed cost is about **10 RTTs**
+at this link's 29.6 ms, where slow-start from the server's observed initial
+window to the ~503 KB BDP should need roughly 6. Something beyond textbook
+slow-start contributes to the startup cost, and these six transfers cannot say
+what. Note also that Cloudflare's `cfL4` header reported `cwnd=53` at the start
+of all six connections, not the Linux default of 10, so the server's initial
+window is not the textbook one either.
+
 ## Issues
 
 None affecting the recorded pass: zero errors, zero drops, no interface bounce,

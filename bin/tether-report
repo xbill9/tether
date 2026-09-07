@@ -532,15 +532,15 @@ def diagnose(f):
             # measured beating it outright, so the single-vs-aggregate gap cannot be read as
             # a per-flow limit. The cause is not established - see the fifth README case.
             if short:
-                body += (f"**Do not conclude a per-flow limit from this.** At {max(s):.1f} Mbps the "
-                         f"8 MB transfer lasts only {secs:.2f}s. On the one link where this was "
-                         "checked, single 32 MB transfers reached 327-351 Mbps against 4-stream "
-                         "aggregates of 361-371 - one flow matched four, so there was no per-flow "
-                         "cap at the 8 MB figure. Why the short transfers sit lower is NOT "
-                         "established: the same link also produced 73 Mbps on a 20 MB transfer "
-                         "minutes later, a 4.8x swing at fixed size that is larger than the size "
-                         "effect itself. Re-run one long single transfer before concluding "
-                         "anything, and keep 8 MB for the record itself.")
+                body += (f"**This is probably the transfer size, not a per-flow limit.** At "
+                         f"{max(s):.1f} Mbps the 8 MB transfer lasts only {secs:.2f}s. On the one "
+                         "link where this was tested with sizes interleaved, 8 MB averaged 158.8 "
+                         "Mbps and 32 MB averaged 362.0 - a 2.28x ratio with no overlap between "
+                         "the two sets - and a single 32 MB flow matched the 4-stream aggregate. "
+                         "The startup cost fitted to ~0.3s, more than slow-start alone explains, "
+                         "so the mechanism is still open. Re-run one long single transfer before "
+                         "concluding anything, interleave sizes if it matters, and keep 8 MB for "
+                         "the record itself.")
                 out.append(("info", f"Single/aggregate gap on a fast link ({spread:.2f}x spread, "
                                     f"aggregate {ratio:.2f}x best single) - unexplained, not a per-flow limit",
                             body))

@@ -110,36 +110,43 @@ and the case below where they do is the one most easily missed.
   transfer beats the short one.** Measured 2026-09-06 on the iPhone 17 Pro
   ([Thunderbolt](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md),
   [USB-C port](tests/2026-09-06-iphone-17-pro-att-usbc-port.md)): the standard
-  8 MB transfer produced 120-160 Mbps single-stream against 4-stream aggregates
-  of 361 and 371 Mbps - textbook per-flow limit - but **single 32 MB transfers
-  on the same connections ran 332, 327 and 351 Mbps**, matching the aggregate.
-  One flow repeatedly reached what four flows reached. **A per-flow cap near
-  140 Mbps is inconsistent with that**, so do not record one on 8 MB evidence
-  alone.
+  8 MB transfer produced 120-177 Mbps single-stream against 4-stream aggregates
+  of 361 and 371 Mbps - textbook per-flow limit - while single 32 MB transfers
+  on the same connections ran 327-366 Mbps, matching the aggregate. One flow
+  repeatedly reached what four flows reached, so **a per-flow cap near 150 Mbps
+  is inconsistent with the evidence.**
 
-  **Why the short transfers sit lower is not established.** The obvious
-  explanation is that 8 MB is too short at these speeds - it lasts under half a
-  second, and the sender's window has to ramp - and the server-side window was
-  measured growing from 53 to 702 packets across one transfer with zero loss
-  and zero retransmission (Cloudflare publishes it in the `server-timing: cfL4`
-  response header; `ss` on this host shows only our own send window, which for
-  a download carries just ACKs). But a fixed-overhead model fitted to the 8 MB
-  and 32 MB points predicted 267 Mbps at 20 MB and **the measured value was 73
-  Mbps**, below even a no-size-dependence prediction. The same link produced
-  73 and 351 Mbps minutes apart at fixed size - **4.8x variation, larger than
-  the size effect it was invoked to explain.** The 8-vs-32 comparison is
-  therefore not controlled for time.
+  **The cause is the transfer size, established by an interleaved test.** Six
+  transfers alternating 8 and 32 MB, the whole run spanning 3.89 seconds so
+  that link variation could not fall differently on the two sizes: 8 MB mean
+  158.75 Mbps, 32 MB mean 361.96 Mbps, a 2.28x ratio, every 32 MB run beating
+  the 8 MB run beside it, and **no overlap at all** between the two sets (best
+  8 MB 176.9, worst 32 MB 354.6). Interleaving matters: an uncontrolled 20 MB
+  sample earlier the same evening returned 73 Mbps against a fitted prediction
+  of 287, because this link can collapse by 4.8x on its own.
 
-  So: treat a flat-spread, high-aggregate reading as *unexplained* rather than
-  as a per-flow limit, and run one long single transfer before writing anything
-  down. Settling the size question properly needs interleaved sizes
-  (8/32/8/32/8/32) so variation hits both equally; nothing cheaper distinguishes
-  them. The 8 MB size stays fixed for records regardless, because changing it
-  breaks comparability with everything already collected.
+  **Why short transfers pay so much is still open.** Fitting a fixed cost to
+  the interleaved durations (8 MB in 0.406 s, 32 MB in 0.707 s - four times the
+  bytes in 1.74x the time) gives an asymptote of 637 Mbps and a startup cost of
+  0.305 s, about **10 RTTs** at this link's 29.6 ms, where slow-start to the
+  ~503 KB BDP should need roughly 6. Something beyond textbook slow-start is in
+  there. Related observations, neither of them an explanation: the server's
+  window grew 53 -> 702 packets across one transfer with zero loss and zero
+  retransmission, and Cloudflare reports `cwnd=53` at the start of every fresh
+  connection rather than the Linux default of 10. Both come from the
+  `server-timing: cfL4` response header - `ss` on this host shows only our own
+  send window, which for a download carries just ACKs and stays at 10.
+
+  Practical rule: **a flat-spread, high-aggregate reading on a fast link is not
+  a per-flow limit.** Run one long single transfer before writing anything
+  down, and interleave sizes if the answer matters. The 8 MB size stays fixed
+  for records regardless, because changing it breaks comparability with
+  everything already collected.
 
   All three earlier sightings of this shape - AT&T Pixel 9a 1.06x/2.6x, Google
   Fi razr plus 2023 1.25x/2.47x, AT&T iPhone 17 Pro 1.26x/2.59x - were on links
-  fast enough for this to apply, so **none of them is established either.**
+  fast enough for this to apply, so **none of them is established as a per-flow
+  limit.**
 
 If an observation fits none of these, say so in the record rather than forcing
 it into the nearest one.
