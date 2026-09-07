@@ -106,33 +106,40 @@ and the case below where they do is the one most easily missed.
   1.06x spread with aggregate 2.6x the best single, the Google Fi razr plus 2023
   at 1.25x / 2.47x, and the AT&T iPhone 17 Pro at 1.26x / 2.59x.
 
-  **Do not read this case on a fast link without checking the transfer
-  duration first.** Measured 2026-09-06 on the iPhone 17 Pro
-  ([record](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md)): the standard
-  8 MB transfer produced 120-160 Mbps single-stream against a 361 Mbps
-  4-stream aggregate - textbook per-flow limit - but **a single 32 MB transfer
-  on the same connection minutes later ran 332 and 327 Mbps**, essentially the
-  whole aggregate. There was no per-flow limit. At 140 Mbps an 8 MB transfer
-  lasts about 0.45 s, and TCP slow-start needs roughly 6 RTTs (~160 ms at this
-  RTT) just to open the window to the BDP, so a third of the transfer is spent
-  ramping. Four parallel flows ramp with four times the initial window and
-  therefore look far faster in aggregate. **The gap was an artifact of the
-  fixed transfer size, not a property of the link.**
+  **Do not read this case on a fast link without checking whether one long
+  transfer beats the short one.** Measured 2026-09-06 on the iPhone 17 Pro
+  ([Thunderbolt](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md),
+  [USB-C port](tests/2026-09-06-iphone-17-pro-att-usbc-port.md)): the standard
+  8 MB transfer produced 120-160 Mbps single-stream against 4-stream aggregates
+  of 361 and 371 Mbps - textbook per-flow limit - but **single 32 MB transfers
+  on the same connections ran 332, 327 and 351 Mbps**, matching the aggregate.
+  One flow repeatedly reached what four flows reached. **A per-flow cap near
+  140 Mbps is inconsistent with that**, so do not record one on 8 MB evidence
+  alone.
 
-  Raising the socket buffer does not help and can hurt: forcing `SO_RCVBUF` to
-  8 MB on the same connection dropped a single 8 MB transfer to 51.6 Mbps,
-  because an explicit `SO_RCVBUF` disables receive-window autotuning. The
-  receive window was never the constraint - the BDP was ~503 KB against a
-  33 MB `tcp_rmem` ceiling.
+  **Why the short transfers sit lower is not established.** The obvious
+  explanation is that 8 MB is too short at these speeds - it lasts under half a
+  second, and the sender's window has to ramp - and the server-side window was
+  measured growing from 53 to 702 packets across one transfer with zero loss
+  and zero retransmission (Cloudflare publishes it in the `server-timing: cfL4`
+  response header; `ss` on this host shows only our own send window, which for
+  a download carries just ACKs). But a fixed-overhead model fitted to the 8 MB
+  and 32 MB points predicted 267 Mbps at 20 MB and **the measured value was 73
+  Mbps**, below even a no-size-dependence prediction. The same link produced
+  73 and 351 Mbps minutes apart at fixed size - **4.8x variation, larger than
+  the size effect it was invoked to explain.** The 8-vs-32 comparison is
+  therefore not controlled for time.
 
-  So this case is only safe to call when a single transfer lasts long enough
-  for slow-start to be a small fraction of it. Below roughly 2 seconds - which
-  8 MB reaches at about 32 Mbps - re-run one long transfer before concluding
-  anything. All three sightings above were on links fast enough for the
-  artifact to apply, so **none of them is established**. The 8 MB size stays
-  fixed for records regardless, because changing it breaks comparability with
-  everything already collected; the long transfer is a diagnostic to run
-  alongside, not a replacement.
+  So: treat a flat-spread, high-aggregate reading as *unexplained* rather than
+  as a per-flow limit, and run one long single transfer before writing anything
+  down. Settling the size question properly needs interleaved sizes
+  (8/32/8/32/8/32) so variation hits both equally; nothing cheaper distinguishes
+  them. The 8 MB size stays fixed for records regardless, because changing it
+  breaks comparability with everything already collected.
+
+  All three earlier sightings of this shape - AT&T Pixel 9a 1.06x/2.6x, Google
+  Fi razr plus 2023 1.25x/2.47x, AT&T iPhone 17 Pro 1.26x/2.59x - were on links
+  fast enough for this to apply, so **none of them is established either.**
 
 If an observation fits none of these, say so in the record rather than forcing
 it into the nearest one.

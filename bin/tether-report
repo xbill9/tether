@@ -528,20 +528,21 @@ def diagnose(f):
                 body += ("" if short else
                          "That leaves carrier shaping as the leading explanation, and no host-side "
                          "tuning will move it. ")
-            # Below ~2s the transfer is short enough that TCP slow-start is a large fraction
-            # of it, and the single-vs-aggregate gap is an artifact of the transfer size
-            # rather than a per-flow limit. Measured 2026-09-06: see the fifth README case.
+            # Below ~2s the transfer is short enough that a single long transfer has been
+            # measured beating it outright, so the single-vs-aggregate gap cannot be read as
+            # a per-flow limit. The cause is not established - see the fifth README case.
             if short:
                 body += (f"**Do not conclude a per-flow limit from this.** At {max(s):.1f} Mbps the "
-                         f"8 MB transfer lasts only {secs:.2f}s, and slow-start needs several RTTs "
-                         f"(~{6 * (avg or 0):.0f} ms at this RTT) just to open the window to the BDP, "
-                         "so much of the transfer is spent ramping while four parallel flows ramp "
-                         "with four times the initial window. On the one link where this was checked "
-                         "the gap vanished entirely: a single 32 MB transfer reached the full "
-                         "4-stream aggregate. Re-run one long single transfer before concluding "
+                         f"8 MB transfer lasts only {secs:.2f}s. On the one link where this was "
+                         "checked, single 32 MB transfers reached 327-351 Mbps against 4-stream "
+                         "aggregates of 361-371 - one flow matched four, so there was no per-flow "
+                         "cap at the 8 MB figure. Why the short transfers sit lower is NOT "
+                         "established: the same link also produced 73 Mbps on a 20 MB transfer "
+                         "minutes later, a 4.8x swing at fixed size that is larger than the size "
+                         "effect itself. Re-run one long single transfer before concluding "
                          "anything, and keep 8 MB for the record itself.")
                 out.append(("info", f"Single/aggregate gap on a fast link ({spread:.2f}x spread, "
-                                    f"aggregate {ratio:.2f}x best single) - probably the transfer size",
+                                    f"aggregate {ratio:.2f}x best single) - unexplained, not a per-flow limit",
                             body))
             else:
                 body += " Either way, use parallel connections for bulk transfers on this link."

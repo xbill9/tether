@@ -127,11 +127,33 @@ interpretation. `README.md`'s fifth diagnostic case and `bin/tether-report` were
 both updated to guard on transfer duration as a result, and the two earlier
 sightings of this shape are now in doubt for the same reason.
 
-An attempt to instrument the flow with `ss -ti` during the transfer produced
-nothing usable - at 0.77 s the transfer is shorter than the sampling could
-resolve, and the sockets captured were unrelated idle connections. The
-throughput result stands on its own and was reproduced twice; the cwnd evidence
-was not obtained.
+An attempt to instrument the flow with `ss -ti` produced nothing usable. **The
+reason given here first - that the transfer was too short to sample - was
+wrong**; see the correction below.
+
+**Corrected 2026-09-06, ~23:25 EDT, after the
+[USB-C port pass](2026-09-06-iphone-17-pro-att-usbc-port.md).** Two claims above
+were overstated and are retracted here rather than edited away:
+
+1. **"The gap is an artifact of the fixed 8 MB transfer size" is not
+   established.** It was tested. A fixed-overhead model fitted to the 8 MB and
+   32 MB points predicts 267 Mbps at 20 MB; the measured value was **73.0
+   Mbps**, below even a no-size-dependence prediction. The same link produced
+   73 and 351 Mbps minutes apart at a fixed size - 4.8x variation, larger than
+   the size effect it was invoked to explain - so the 8-vs-32 comparison was
+   never controlled for time. Settling it needs interleaved sizes.
+2. **`ss` did not fail for the reason stated.** On a download the local socket's
+   cwnd is *our* send window, which carries only ACKs and sits at 10 regardless;
+   the window that matters is the server's. Cloudflare publishes it in the
+   `server-timing: cfL4` response header, and read there it grew from 53 to 702
+   packets across one transfer with zero loss and zero retransmission. So a
+   large ramp is real - but it was measured on the slow 20 MB run, so it does
+   not by itself explain the 8-vs-32 gap.
+
+**What survives unchanged:** one flow reached 332.3 and 327.2 Mbps here, and
+351.1 Mbps on the other port, against aggregates of 361.3 and 370.7. A single
+flow has repeatedly matched four. A per-flow cap near 140 Mbps is inconsistent
+with that. The frontmatter measurements are untouched.
 
 **The bus is not the story, and the jump from this morning is not the cable.**
 It is tempting to read 21.2 -> 361.3 Mbps aggregate against 5000 -> 10000 Mbps

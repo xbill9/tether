@@ -5,6 +5,7 @@ the spread is the finding.
 
 | Date | Phone | Carrier | Driver | Bus | CC | Single (Mbps) | Par-4 | RTT avg | Verdict |
 |---|---|---|---|---|---|---|---|---|---|
+| 2026-09-06 | [iPhone 17 Pro](tests/2026-09-06-iphone-17-pro-att-usbc-port.md) | AT&T | ipheth | 3.0 | cubic | 134.856 / 143.749 / 129.250 | 370.695 | 29.601 ms | good |
 | 2026-09-06 | [iPhone 17 Pro](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md) | AT&T | ipheth | 3.2 | cubic | 151.036 / 119.931 / 147.540 | 361.330 | 27.268 ms | good |
 | 2026-09-06 | [iPhone 16e](tests/2026-09-06-iphone-16e-google-fi-cubic.md) | Google Fi | ipheth | 2.0 | cubic | 25.449 / 46.284 / 54.240 | 79.867 | 39.181 ms | usable |
 | 2026-09-06 | [Pixel 9a](tests/2026-09-06-pixel-9a-att-superspeed.md) | AT&T | cdc_ncm | 3.0 | cubic | 49.091 / 51.870 / 4.387 | 8.215 | 21.122 ms | poor |
@@ -87,24 +88,32 @@ the spread is the finding.
       ([record](tests/2026-09-05-pixel-9a-google-fi.md)).
 - [x] Any RNDIS phone - done 2026-09-05, Motorola razr 2024
       ([record](tests/2026-09-05-motorola-razr-2024-google-fi.md)).
-- [x] **Test the per-flow limit directly** - done 2026-09-06, and **there was no
-      per-flow limit.** Seen three times on two carriers (AT&T Pixel 9a 1.06x
-      spread / 2.6x aggregate, Google Fi razr plus 2023 1.25x / 2.47x, AT&T
-      iPhone 17 Pro 1.26x / 2.59x,
-      [record](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md)). Measured on
-      the 17 Pro on Thunderbolt: the standard 8 MB transfer gave 135.8 and
-      159.7 Mbps single against a 361.3 Mbps 4-stream aggregate, but **a single
-      32 MB transfer on the same connection ran 332.3 and 327.2 Mbps** - the
-      whole aggregate, from one flow. The gap is an artifact of the 8 MB
-      transfer size: at ~140 Mbps it lasts 0.45 s and slow-start spends ~6 RTTs
-      opening the window, while four flows ramp with 4x the initial window.
-      Forcing `SO_RCVBUF` to 8 MB made it *worse* (51.6 Mbps) by disabling
-      receive-window autotuning; the window was never the constraint (BDP
-      ~503 KB against a 33 MB `tcp_rmem` ceiling). README's fifth case and
-      `bin/tether-report` both now guard on transfer duration. **All three
-      earlier sightings were on links fast enough for the artifact, so none of
-      them is established** - re-reading them needs a long transfer, not a
-      re-run of the standard pass.
+- [x] **Test the per-flow limit directly** - done 2026-09-06. **There is no
+      per-flow cap at the 8 MB figure**, but the reason the 8 MB transfers sit
+      low is **not established**. On the iPhone 17 Pro, single 32 MB transfers
+      ran 332.3, 327.2 and 351.1 Mbps against 4-stream aggregates of 361.3 and
+      370.7 - one flow matching four, across two ports
+      ([Thunderbolt](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md),
+      [USB-C](tests/2026-09-06-iphone-17-pro-att-usbc-port.md)). The
+      transfer-size explanation was then tested and did not hold up: a
+      fixed-overhead fit predicted 267 Mbps at 20 MB and the measurement came
+      back at **73.0 Mbps**, and the same link swung 4.8x at fixed size within
+      minutes - more than the size effect it was meant to explain. Forcing
+      `SO_RCVBUF` to 8 MB made things worse (51.6 Mbps) by disabling
+      receive-window autotuning; the window was never binding (BDP ~503 KB
+      against a 33 MB `tcp_rmem` ceiling). Server-side cwnd *does* ramp -
+      53 -> 702 packets across one transfer, zero loss, read from Cloudflare's
+      `server-timing: cfL4` header - but that was measured on the slow run, so
+      it does not close the argument. All three earlier sightings remain
+      unestablished.
+- [ ] **Settle transfer-size dependence with interleaved sizes.** Alternate
+      8 MB and 32 MB (8/32/8/32/8/32) so link variation hits both equally.
+      ~120 MB metered. Nothing cheaper separates a size effect from a link that
+      moved 4.8x at fixed size on 2026-09-06.
+- [ ] **`speed.cloudflare.com/__down` refuses some sizes.** 12, 15, 16, 16.78
+      and 17 MB return `403 Forbidden` with a 1-byte body; 8, 20, 24 and 32 MB
+      return 200. Reproduced interleaved, so not rate limiting. Cause unknown -
+      worth knowing before picking a diagnostic size.
 - [ ] Capture `gsm.network.type` during a pass on the four records that still
       have `carrier.network` blank - or accept that they cannot be filled
       retrospectively and leave them.
