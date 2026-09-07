@@ -506,9 +506,16 @@ def diagnose(f):
         if spread and spread <= 1.3 and ratio and ratio >= 2.0:
             bdp = max(s) * 1e6 / 8 * ((avg or 0) / 1000)      # bytes in flight
             rmem = (tcp.get("tcp_rmem") or [0, 0, 0])[2]
-            body = ("Flat single-stream with four flows going far faster points at a per-flow "
-                    "limit - carrier shaping, or one flow unable to fill the bandwidth-delay "
-                    f"product ({bdp / 1024:.0f} KB in flight at {avg} ms). ")
+            secs = 64.0 / max(s) if max(s) else None      # 8 MB at the best single-stream rate
+            short = secs is not None and secs < 2.0
+            if short:
+                body = ("Flat single-stream with four flows going far faster usually points at a "
+                        "per-flow limit, but this link is too fast for the standard 8 MB transfer "
+                        f"to show one ({bdp / 1024:.0f} KB in flight at {avg} ms). ")
+            else:
+                body = ("Flat single-stream with four flows going far faster points at a per-flow "
+                        "limit - carrier shaping, or one flow unable to fill the bandwidth-delay "
+                        f"product ({bdp / 1024:.0f} KB in flight at {avg} ms). ")
             if rmem and bdp and rmem < 2 * bdp:
                 body += (f"**The receive window is a live suspect**: `tcp_rmem` autotunes up to "
                          f"{rmem:,} bytes, which is not comfortably above that BDP. Raise "
@@ -517,10 +524,28 @@ def diagnose(f):
             elif rmem and bdp:
                 body += (f"**The receive window is not the constraint**: `tcp_rmem` autotunes up to "
                          f"{rmem:,} bytes, roughly {rmem / bdp:.0f}x the BDP, so one flow has ample "
-                         "window and still cannot go faster. That leaves carrier shaping as the "
-                         "leading explanation, and no host-side tuning will move it.")
-            body += " Either way, use parallel connections for bulk transfers on this link."
-            out.append(("recommend", f"Per-flow limit ({spread:.2f}x spread, aggregate {ratio:.2f}x best single)", body))
+                         "window. ")
+                body += ("" if short else
+                         "That leaves carrier shaping as the leading explanation, and no host-side "
+                         "tuning will move it. ")
+            # Below ~2s the transfer is short enough that TCP slow-start is a large fraction
+            # of it, and the single-vs-aggregate gap is an artifact of the transfer size
+            # rather than a per-flow limit. Measured 2026-09-06: see the fifth README case.
+            if short:
+                body += (f"**Do not conclude a per-flow limit from this.** At {max(s):.1f} Mbps the "
+                         f"8 MB transfer lasts only {secs:.2f}s, and slow-start needs several RTTs "
+                         f"(~{6 * (avg or 0):.0f} ms at this RTT) just to open the window to the BDP, "
+                         "so much of the transfer is spent ramping while four parallel flows ramp "
+                         "with four times the initial window. On the one link where this was checked "
+                         "the gap vanished entirely: a single 32 MB transfer reached the full "
+                         "4-stream aggregate. Re-run one long single transfer before concluding "
+                         "anything, and keep 8 MB for the record itself.")
+                out.append(("info", f"Single/aggregate gap on a fast link ({spread:.2f}x spread, "
+                                    f"aggregate {ratio:.2f}x best single) - probably the transfer size",
+                            body))
+            else:
+                body += " Either way, use parallel connections for bulk transfers on this link."
+                out.append(("recommend", f"Per-flow limit ({spread:.2f}x spread, aggregate {ratio:.2f}x best single)", body))
 
         if jittery:
             out.append(("recommend", f"High RTT jitter (mdev {mdev} ms on a {avg} ms average)",

@@ -5,6 +5,8 @@ the spread is the finding.
 
 | Date | Phone | Carrier | Driver | Bus | CC | Single (Mbps) | Par-4 | RTT avg | Verdict |
 |---|---|---|---|---|---|---|---|---|---|
+| 2026-09-06 | [iPhone 17 Pro](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md) | AT&T | ipheth | 3.2 | cubic | 151.036 / 119.931 / 147.540 | 361.330 | 27.268 ms | good |
+| 2026-09-06 | [iPhone 16e](tests/2026-09-06-iphone-16e-google-fi-cubic.md) | Google Fi | ipheth | 2.0 | cubic | 25.449 / 46.284 / 54.240 | 79.867 | 39.181 ms | usable |
 | 2026-09-06 | [Pixel 9a](tests/2026-09-06-pixel-9a-att-superspeed.md) | AT&T | cdc_ncm | 3.0 | cubic | 49.091 / 51.870 / 4.387 | 8.215 | 21.122 ms | poor |
 | 2026-09-06 | [iPhone 17 Pro](tests/2026-09-06-iphone-17-pro-att-superspeed.md) | AT&T | ipheth | 3.0 | cubic | 10.872 / 19.379 / 16.698 | 21.246 | 85.105 ms | usable |
 | 2026-09-05 | [Galaxy Z Flip4](tests/2026-09-05-galaxy-z-flip4-google-fi.md) | Google Fi | rndis_host | 2.0 | bbr | 38.540 / 33.193 / 33.373 | 71.336 | 28.202 ms | good |
@@ -85,12 +87,24 @@ the spread is the finding.
       ([record](tests/2026-09-05-pixel-9a-google-fi.md)).
 - [x] Any RNDIS phone - done 2026-09-05, Motorola razr 2024
       ([record](tests/2026-09-05-motorola-razr-2024-google-fi.md)).
-- [ ] **Test the per-flow limit directly.** Seen twice now on two carriers - the
-      AT&T Pixel 9a (1.06x spread, aggregate 2.6x best single) and the Google Fi
-      razr plus 2023 (1.25x, 2.47x, untracked record). A single stream with an
-      enlarged socket buffer would separate "the carrier shapes
-      per flow" from "one flow cannot fill the bandwidth-delay product". Host-side
-      change, costs one 8 MB transfer rather than a full pass.
+- [x] **Test the per-flow limit directly** - done 2026-09-06, and **there was no
+      per-flow limit.** Seen three times on two carriers (AT&T Pixel 9a 1.06x
+      spread / 2.6x aggregate, Google Fi razr plus 2023 1.25x / 2.47x, AT&T
+      iPhone 17 Pro 1.26x / 2.59x,
+      [record](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md)). Measured on
+      the 17 Pro on Thunderbolt: the standard 8 MB transfer gave 135.8 and
+      159.7 Mbps single against a 361.3 Mbps 4-stream aggregate, but **a single
+      32 MB transfer on the same connection ran 332.3 and 327.2 Mbps** - the
+      whole aggregate, from one flow. The gap is an artifact of the 8 MB
+      transfer size: at ~140 Mbps it lasts 0.45 s and slow-start spends ~6 RTTs
+      opening the window, while four flows ramp with 4x the initial window.
+      Forcing `SO_RCVBUF` to 8 MB made it *worse* (51.6 Mbps) by disabling
+      receive-window autotuning; the window was never the constraint (BDP
+      ~503 KB against a 33 MB `tcp_rmem` ceiling). README's fifth case and
+      `bin/tether-report` both now guard on transfer duration. **All three
+      earlier sightings were on links fast enough for the artifact, so none of
+      them is established** - re-reading them needs a long transfer, not a
+      re-run of the standard pass.
 - [ ] Capture `gsm.network.type` during a pass on the four records that still
       have `carrier.network` blank - or accept that they cannot be filled
       retrospectively and leave them.

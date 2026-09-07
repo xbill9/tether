@@ -101,9 +101,38 @@ and the case below where they do is the one most easily missed.
   anything interactive.
 - **single spread near flat, but aggregate far above single** - neither of the
   first two cases. A flow that reproducibly stops at the same figure while four
-  together go much faster points at a per-flow limit - carrier shaping, or one
-  flow unable to fill the bandwidth-delay product. Seen once, on the AT&T Pixel
-  9a at 1.06x spread with aggregate 2.6x the best single.
+  together go much faster looks like a per-flow limit - carrier shaping, or one
+  flow unable to fill the bandwidth-delay product. Seen on the AT&T Pixel 9a at
+  1.06x spread with aggregate 2.6x the best single, the Google Fi razr plus 2023
+  at 1.25x / 2.47x, and the AT&T iPhone 17 Pro at 1.26x / 2.59x.
+
+  **Do not read this case on a fast link without checking the transfer
+  duration first.** Measured 2026-09-06 on the iPhone 17 Pro
+  ([record](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md)): the standard
+  8 MB transfer produced 120-160 Mbps single-stream against a 361 Mbps
+  4-stream aggregate - textbook per-flow limit - but **a single 32 MB transfer
+  on the same connection minutes later ran 332 and 327 Mbps**, essentially the
+  whole aggregate. There was no per-flow limit. At 140 Mbps an 8 MB transfer
+  lasts about 0.45 s, and TCP slow-start needs roughly 6 RTTs (~160 ms at this
+  RTT) just to open the window to the BDP, so a third of the transfer is spent
+  ramping. Four parallel flows ramp with four times the initial window and
+  therefore look far faster in aggregate. **The gap was an artifact of the
+  fixed transfer size, not a property of the link.**
+
+  Raising the socket buffer does not help and can hurt: forcing `SO_RCVBUF` to
+  8 MB on the same connection dropped a single 8 MB transfer to 51.6 Mbps,
+  because an explicit `SO_RCVBUF` disables receive-window autotuning. The
+  receive window was never the constraint - the BDP was ~503 KB against a
+  33 MB `tcp_rmem` ceiling.
+
+  So this case is only safe to call when a single transfer lasts long enough
+  for slow-start to be a small fraction of it. Below roughly 2 seconds - which
+  8 MB reaches at about 32 Mbps - re-run one long transfer before concluding
+  anything. All three sightings above were on links fast enough for the
+  artifact to apply, so **none of them is established**. The 8 MB size stays
+  fixed for records regardless, because changing it breaks comparability with
+  everything already collected; the long transfer is a diagnostic to run
+  alongside, not a replacement.
 
 If an observation fits none of these, say so in the record rather than forcing
 it into the nearest one.
