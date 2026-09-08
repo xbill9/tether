@@ -184,10 +184,6 @@
 </head>
 <body>
 <figure><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cover.567bed21.jpg" alt="The Cable Buys Headroom: 91% of a USB 2.0 Bus, 3.6% of a Thunderbolt One" /></figure>
-<header id="title-block-header" hidden>
-<h1 class="title">The Cable Buys Headroom: 91% of a USB 2.0 Bus, 3.6% of
-a Thunderbolt One</h1>
-</header>
 <p>This article walks through diagnosing a USB tether that would not
 negotiate above USB 2.0 speed, on a phone that advertises 10 Gb/s. The
 hunt took four cables and three physical ports across two days.</p>
@@ -244,7 +240,8 @@ the two ends will negotiate down to High Speed and work perfectly.</p>
 saying a cable capped you. The only evidence is a number in
 <code>sysfs</code> that you have to go and read, next to a second number
 saying what the device had offered:</p>
-<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-1.png" alt="table" /></p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-1.png"
+alt="Table: Reading, Where, What it is" /></p>
 <p><strong>The gap between those two numbers is the cable's
 vote.</strong> Steps 1 and 2 below are those two readings, and
 everything after them is narrowing down which participant cast the low
@@ -318,7 +315,8 @@ typec port1: bound usb3-port2 (ops connector_ops [usbcore])
 typec port1: bound usb2-port1 (ops connector_ops [usbcore])</code></pre>
 <p>Read against <code>lspci</code>, that is a complete map of the
 machine's USB-C:</p>
-<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-2.png" alt="table" /></p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-2.png"
+alt="Table: Type-C connector, USB 2.0 half, SuperSpeed half, Controller" /></p>
 <p>That table is correct. The conclusion drawn from it — <em>"there is
 no untried port on this machine"</em> — was wrong, and it cost about an
 hour.</p>
@@ -368,7 +366,8 @@ a finding would have convicted the cable on no evidence.</p>
 <h4 id="the-hunt">The Hunt</h4>
 <p>With the cable unreadable, the only remaining instrument is
 substitution. Four cables, three receptacles, over one afternoon:</p>
-<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-3.png" alt="table" /></p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-3.png"
+alt="Table: Pass, Cable, Receptacle, Bus" /></p>
 <p>Zero USB errors and zero drops in every pass. The host has two
 SuperSpeed root hubs, both enumerated, both idle, and neither had ever
 seen a device.</p>
@@ -386,7 +385,8 @@ tests.</p>
 has nothing to do with USB.</p>
 <p>Throughput was measured on every one of those passes, and it moved a
 great deal:</p>
-<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-4.png" alt="table" /></p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-4.png"
+alt="Table: Pass, Single (Mbps), 4-stream aggregate, RTT avg, RTT mdev" /></p>
 <p>Aggregate climbed 73 → 85 → 101 → 130 across four consecutive cable
 swaps. Every new cable looked better than the one before it.</p>
 <p><strong>None of that is a cable effect.</strong> The carrier was
@@ -423,7 +423,8 @@ receptacle is a control here. The cable is the only variable that
 moved.</p>
 <p>A Pixel 9a on the same new cable, same receptacle, same DHCP lease,
 confirmed it from the other side:</p>
-<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-5.png" alt="table" /></p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-5.png"
+alt="Table: 2026-09-05, old cable, 2026-09-06, $15 cable" /></p>
 <p>Two handsets, one cable swap, and the question that had eaten an
 afternoon was answered. The unmarked cables were USB 2.0 cables. ✅</p>
 <h4 id="what-the-cable-unlocked-headroom">What the Cable Unlocked:
@@ -435,7 +436,8 @@ worth $15.</p>
 throughput of a 480 Mbps USB 2.0 bus, after protocol overhead, is
 <strong>300 Mbps</strong>. Measure every pass in the log as a share of
 the bus it ran on and the picture is stark:</p>
-<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-6.png" alt="table" /></p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-6.png"
+alt="Table: Pass, Bus, 4-stream aggregate, Share of the bus" /></p>
 <p><strong>91% against 3.6% is the whole argument</strong>, and the two
 denominators are worth naming so the comparison is read correctly. The
 91% is 273 Mbps against the <strong>usable</strong> 300 Mbps of a 480
@@ -459,7 +461,8 @@ above the traffic</em>, so the tether is now free to take whatever the
 radio gives it on any given evening — and this link swings by more than
 4x on its own within minutes.</p>
 <p>Four of those measurements also clear the 300 Mbps line outright:</p>
-<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-7.png" alt="table" /></p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-7.png"
+alt="Table: Measurement, Result, Above 300 Mbps?" /></p>
 <p><strong>Those numbers were not reachable on a USB 2.0 bus.</strong>
 Not "would have been slower" — not reachable. Every one of them needed a
 cable that could vote for SuperSpeed. ✅</p>
@@ -495,7 +498,8 @@ the link.</p>
 <h4 id="what-the-link-reached">What the Link Reached</h4>
 <p>Once the bus was out of the way, three passes on this handset across
 two evenings, on two cables and two host controllers:</p>
-<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-8.png" alt="table" /></p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-8.png"
+alt="Table: Thunderbolt, CUBIC, USB-C receptacle, CUBIC, Anker cable, BBR" /></p>
 <p><strong>Three aggregates within 3% of each other — 361.330, 370.695
 and 365.185 — across two different cables, two host controllers, two
 congestion control algorithms and a bus that differs by 2x.</strong>
@@ -560,7 +564,8 @@ its own between one transfer and the next.</p>
 <p>The design that settled it was six transfers alternating 8 and 32 MB,
 <strong>the whole run spanning 3.89 seconds</strong> so that link
 variation could not fall differently on the two sizes:</p>
-<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-9.png" alt="table" /></p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-9.png"
+alt="Table: #, size, duration, throughput" /></p>
 <p>8 MB mean <strong>158.75</strong> Mbps, 32 MB mean
 <strong>361.96</strong> Mbps, a ratio of <strong>2.28x</strong>. Every
 32 MB run beat the 8 MB run beside it, and the two sets do not overlap
