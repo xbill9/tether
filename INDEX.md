@@ -5,6 +5,7 @@ the spread is the finding.
 
 | Date | Phone | Carrier | Driver | Bus | CC | Single (Mbps) | Par-4 | RTT avg | Verdict |
 |---|---|---|---|---|---|---|---|---|---|
+| 2026-09-08 | [iPhone 17 Pro](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt-retest.md) | AT&T | ipheth | 3.2 | bbr | 100.848 / 127.493 / 91.988 | 317.250 | 31.314 ms | good |
 | 2026-09-08 | [iPhone 17 Pro](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt.md) | AT&T | ipheth | 3.2 | bbr | 115.395 / 125.698 / 129.642 | 282.496 | 36.516 ms | good |
 | 2026-09-08 | [iPhone 17 Pro](tests/2026-09-08-iphone-17-pro-att-bbr.md) | AT&T | ipheth | 3.0 | bbr | 134.930 / 113.576 / 123.229 | 365.185 | 36.715 ms | good |
 | 2026-09-06 | [iPhone 17 Pro](tests/2026-09-06-iphone-17-pro-att-usbc-port.md) | AT&T | ipheth | 3.0 | cubic | 134.856 / 143.749 / 129.250 | 370.695 | 29.601 ms | good |
@@ -182,20 +183,25 @@ the spread is the finding.
       recovers, a volume-triggered carrier throttle is live; if not, it is not
       volume. Costs 24 MB and replaces a hypothesis currently resting on two
       uncontrolled passes.
-- [ ] **Run the parallel test *before* the singles, once.** Every record in this
-      log runs singles then parallel, so "the link decayed mid-pass" and "four
-      flows genuinely do worse than one" are indistinguishable in all of them -
-      including the three passes where the aggregate came out *below* the
-      slowest single. Reversing the order on one pass separates them for the
-      whole log. Applies to the skill, not to one phone.
-      **Sharpened 2026-09-08 by the
-      [Thunderbolt BBR pass](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt.md),
-      where the decay was caught in the act.** Opening singles ran 115.4 /
-      125.7 / 129.6, closing singles 77.2 / 110.3 / 118.1, and two identical
-      32 MB transfers two seconds apart differed by 1.31x - so its 282.496
-      aggregate, measured last as always, is very likely understated against
-      the 365.185 recorded an hour earlier on the other port. This is no longer
-      a hypothetical confound: it has now demonstrably distorted a record.
+- [x] ~~**Run the parallel test *before* the singles, once.**~~ **Done
+      2026-09-08, bracketed** - a parallel-4 both before and after the singles
+      ([record](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt-retest.md)).
+      **Opening 317.069, closing 317.250 - agreement to 0.06%.** So the
+      ordering is **not** a systematic confound: on a stable link the aggregate
+      lands on the same number whether it is measured first or last, and every
+      existing record in this log is safe on that count.
+      What the confound really is, is *conditional*. It bites only when the
+      link is decaying, and that was caught in the act earlier the same day
+      ([record](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt.md)):
+      opening singles 115.4 / 125.7 / 129.6 against closing singles 77.2 /
+      110.3 / 118.1, two identical 32 MB transfers 1.31x apart, and an
+      aggregate of 282.496 that the stable retest showed to be **12.3%
+      understated** (317.250, with `mdev` halved from 8.159 to 3.810).
+      **Recommend adopting the bracket as standard practice.** A second
+      parallel-4 costs 32 MB and converts "was the link stable during this
+      pass?" from a judgement call into a measurement - if the two aggregates
+      disagree, the record is contaminated and you know it before writing it
+      down. Applies to the skill, not to one phone.
 - [x] ~~**Re-run the iPhone 17 Pro SuperSpeed pass under BBR.**~~ **Done
       2026-09-08** ([record](tests/2026-09-08-iphone-17-pro-att-bbr.md)). Same
       handset, same `0000:00:14.0` controller, same 5000 bus, now under `bbr` /
