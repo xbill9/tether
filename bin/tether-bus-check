@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+# tether-bus-check - who voted for the current USB link rate?
+#
+# USB link speed is autonegotiated between host, cable and device, and the
+# trained rate is the fastest mode all three can manage. Nothing reports a cable
+# that capped the link: the tether comes up, DHCP works, traffic flows.
+#
+# This reads both sides of that negotiation - what the link agreed on, and what
+# the device offered - plus the port inventory needed to tell a cable fault from
+# a port fault. It measures nothing and costs no cellular data.
+#
+# Usage: bin/tether-bus-check [interface]
+
+set -u
+
+TETHER_DRIVERS="cdc_ncm rndis_host ipheth"
+
+say() { printf '%s\n' "$*"; }
+hd()  { printf '\n== %s\n' "$*"; }
+
+# ---------------------------------------------------------------- interface
+find_iface() {
+    local i ifn drv
+    for i in /sys/class/net/*/device/driver; do
+        [ -e "$i" ] || continue
+        ifn=$(basename "$(dirname "$(dirname "$i")")")
+        drv=$(basename "$(readlink -f "$i")")
+        case " $TETHER_DRIVERS " in
+            *" $drv "*) printf '%s %s\n' "$ifn" "$drv"; return 0 ;;
+        esac
+    done
+    return 1
+}
+
+IF=${1:-}
+if [ -n "$IF" ]; then
+    DRV=$(basename "$(readlink -f "/sys/class/net/$IF/device/driver")" 2>/dev/null)
+    if [ -z "$DRV" ] || [ "$DRV" = "." ]; then
+        say "no USB driver behind interface $IF - is that the right interface?"
+        exit 1
+    fi
+else
+    # NB: read returns 0 on an empty line, so test the output, not read's status.
+    found=$(find_iface)
+    if [ -z "$found" ]; then
+        say "no tether interface found (looked for: $TETHER_DRIVERS)"
+        say "is the phone attached with USB tethering enabled?"
+        say ""
+        say "USB network interfaces present on this host:"
+        for i in /sys/class/net/*/device/driver; do
+            [ -e "$i" ] || continue
+            say "  $(basename "$(dirname "$(dirname "$i")")")  ->  $(basename "$(readlink -f "$i")")"
+        done
+        exit 1
+    fi
+    IF=${found%% *}
+    DRV=${found##* }
+fi
+
+hd "Interface"
+say "interface        $IF"
+say "driver           $DRV"
+
+# Route check first: measuring the wrong link is the most common way a
+# tethering number turns out to be a number about something else.
+DEFROUTE=$(ip route show default 2>/dev/null | head -1)
+say "default route    ${DEFROUTE:-none}"
+case "$DEFROUTE" in
+    *" dev $IF"*) say "holds route      yes" ;;
+    *)            say "holds route      NO - traffic is not going over the tether" ;;
+esac
+
+OTHERS=$(ip -o link show up 2>/dev/null \
+    | awk -F': ' '{print $2}' | cut -d@ -f1 \
+    | grep -vx -e lo -e "$IF" | tr '\n' ' ')
+[ -n "${OTHERS// /}" ] && say "also up          $OTHERS  <- take these down before measuring"
+
+# ------------------------------------------------------- the two readings
+DEV=$(basename "$(readlink -f "/sys/class/net/$IF/device/.." 2>/dev/null)")
+SPEED=$(cat "/sys/bus/usb/devices/$DEV/speed" 2>/dev/null)
+VID=$(cat "/sys/bus/usb/devices/$DEV/idVendor" 2>/dev/null)
+PID=$(cat "/sys/bus/usb/devices/$DEV/idProduct" 2>/dev/null)
+LINK=$(cat "/sys/class/net/$IF/speed" 2>/dev/null)
+
+case "$SPEED" in
+    480)   MODE="USB 2.0 High Speed" ;;
+    5000)  MODE="USB 3.x Gen 1 SuperSpeed" ;;
+    10000) MODE="USB 3.x Gen 2 SuperSpeed+" ;;
+    20000) MODE="USB 3.2 Gen 2x2" ;;
+    *)     MODE="unknown" ;;
+esac
+
+hd "What the link negotiated"
+say "usb device       $DEV  ($VID:$PID)"
+say "bus speed        ${SPEED:-unknown} Mbps   $MODE"
+say "negotiated link  ${LINK:-not reported by this driver} "
+
+hd "What the device offered"
+CAPS=""
+if command -v lsusb >/dev/null 2>&1 && [ -n "$VID" ]; then
+    CAPS=$(lsusb -v -d "$VID:$PID" 2>/dev/null \
+        | grep -E "SuperSpeed(Plus)? USB Device Capability|Symmetric (RX|TX)|wSpeedsSupported")
+fi
+if [ -n "$CAPS" ]; then
+    printf '%s\n' "$CAPS" | sed 's/^ */  /'
+else
+    say "  no SuperSpeed capability read from the BOS descriptor"
+    say "  (run as root for full lsusb -v output; without it this is not conclusive)"
+fi
+
+hd "Verdict"
+if [ "${SPEED:-0}" = "480" ] && printf '%s' "$CAPS" | grep -q SuperSpeed; then
+    say "MISMATCH - the device offered SuperSpeed and the link trained at 480."
+    say "Something else in the chain voted 480. The cable is the usual culprit:"
+    say "an unmarked C-to-C cable is overwhelmingly USB 2.0 by construction, and"
+    say "carries no SuperSpeed differential pairs at all."
+    say ""
+    say "A 480 Mbps bus caps real bulk throughput at roughly 300 Mbps regardless"
+    say "of anything else you tune."
+elif [ "${SPEED:-0}" = "480" ]; then
+    say "Link trained at 480 and no SuperSpeed capability was read from the"
+    say "device. If that reading is complete, 480 is the device's own ceiling"
+    say "and no cable will move it."
+else
+    say "Link trained above USB 2.0 at ${SPEED} Mbps. The bus is not your ceiling."
+fi
+
+# -------------------------------------------------------- port inventory
+# /sys/class/typec enumerates Type-C connectors ONLY. A Type-A receptacle has no
+# PD and no connector object, so it cannot appear there - taking the inventory
+# from typec misses it. Take it from the hotplug entries instead.
+hd "External ports (hotplug entries, not /sys/class/typec)"
+for p in /sys/bus/usb/devices/usb*/*/usb*-port*; do
+    [ -e "$p/connect_type" ] || continue
+    [ "$(cat "$p/connect_type" 2>/dev/null)" = "hotplug" ] || continue
+    peer="-"
+    [ -L "$p/peer" ] && peer=$(basename "$(readlink -f "$p/peer")")
+    printf '  %-12s peer=%-12s location=%s\n' \
+        "$(basename "$p")" "$peer" "$(cat "$p/location" 2>/dev/null)"
+done | sort
+say ""
+say "Ports sharing a location are two halves of one physical receptacle - the"
+say "USB 2.0 half and its SuperSpeed peer. A device that starts training"
+say "SuperSpeed moves to the peer hub, which looks like a port change and is not."
+
+# ------------------------------------------------------------ cable e-marker
+hd "Cable identity over Power Delivery"
+CABLE_NODES=$(ls -d /sys/class/typec/*-cable 2>/dev/null)
+if [ -n "$CABLE_NODES" ]; then
+    for c in $CABLE_NODES; do
+        say "  $(basename "$c")"
+        for f in "$c"/identity/*; do
+            [ -f "$f" ] && printf '    %-24s %s\n' "$(basename "$f")" "$(cat "$f")"
+        done
+    done
+else
+    say "  no cable node exposed by this stack"
+    PARTNER_PD=$(cat /sys/class/typec/*-partner/usb_power_delivery_revision 2>/dev/null | head -1)
+    say "  partner PD revision: ${PARTNER_PD:-none}"
+    say ""
+    say "  The spec requires an e-marker on a passive cable above USB 2.0, so a"
+    say "  missing one would be evidence - but only on a stack that reports cable"
+    say "  identity at all. If the partner's PD revision is absent or 0.0, this"
+    say "  stack is not surfacing VDO data and the silence means nothing."
+fi
+
+hd "Interface counters"
+ip -s link show "$IF" 2>/dev/null | sed -n '3,6p'
+say ""
+say "Non-zero errors or drops point at cable or power, not configuration."
+say "Read these BEFORE a measurement pass as well as after, or the counters are"
+say "cumulative since the interface came up rather than a delta for the pass."
+
+say ""
+say "Nothing above transferred a byte over the cellular link."
+say "For the throughput half: bin/tether-report --measure  (~56 MB of metered data)"

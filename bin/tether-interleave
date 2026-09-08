@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""tether-interleave - A/B two transfer sizes against a link that moves.
+
+A link can swing by more than 4x on its own within minutes, so comparing a
+transfer taken now against one taken ten minutes ago measures the clock, not the
+variable. Every uncontrolled comparison in this repository that was later
+checked turned out to be measuring time.
+
+This alternates two sizes back to back on fresh connections and reports whether
+the two sets overlap. Interleaved, link variation falls on both sizes equally.
+
+The design answered the transfer-size question on 2026-09-06: six transfers
+across 3.89 s gave 8 MB mean 158.75 Mbps against 32 MB mean 361.96 Mbps, with no
+overlap between the sets. An uncontrolled 20 MB sample earlier the same evening
+had returned 73 Mbps against a fitted prediction of 287.
+
+Note this spends metered cellular data: 3 pairs of 8/32 MB is 120 MB. Check the
+cost line it prints before answering the prompt.
+
+  bin/tether-interleave                  # 3 pairs of 8 and 32 MB
+  bin/tether-interleave -a 8 -b 32 -n 3
+  bin/tether-interleave --yes            # skip the confirmation
+
+Sizes are megabytes. Note that speed.cloudflare.com/__down refuses some of them:
+12, 15, 16, 16.78 and 17 MB return 403 with a 1-byte body, while 8, 20, 24 and
+32 MB return 200. The cause is unknown; pick a size known to serve.
+"""
+
+import argparse
+import shutil
+import subprocess
+import statistics
+import sys
+import time
+
+ENDPOINT = "https://speed.cloudflare.com/__down?bytes={}"
+
+
+def transfer(size_mb, timeout):
+    """One single-stream download on a fresh connection.
+
+    Returns (mbps, seconds, http_code). curl reports bytes/second, so the
+    conversion to Mbps is value * 8 / 1e6.
+    """
+    url = ENDPOINT.format(int(size_mb * 1_000_000))
+    t0 = time.monotonic()
+    p = subprocess.run(
+        ["curl", "-s", "-o", "/dev/null", "--no-keepalive",
+         "-w", "%{speed_download} %{http_code}", url],
+        capture_output=True, text=True, timeout=timeout,
+    )
+    elapsed = time.monotonic() - t0
+    if p.returncode != 0 or not p.stdout.strip():
+        return None, elapsed, "curl-error"
+    speed, code = p.stdout.split()
+    if code != "200":
+        return None, elapsed, code
+    return float(speed) * 8 / 1e6, elapsed, code
+
+
+def main():
+    ap = argparse.ArgumentParser(
+        description="Interleaved A/B of two transfer sizes on one link.")
+    ap.add_argument("-a", type=float, default=8, metavar="MB",
+                    help="first size in MB (default 8, the repo's fixed size)")
+    ap.add_argument("-b", type=float, default=32, metavar="MB",
+                    help="second size in MB (default 32)")
+    ap.add_argument("-n", type=int, default=3, metavar="PAIRS",
+                    help="number of a/b pairs (default 3)")
+    ap.add_argument("--timeout", type=int, default=120)
+    ap.add_argument("--yes", action="store_true",
+                    help="skip the metered-data confirmation")
+    args = ap.parse_args()
+
+    if not shutil.which("curl"):
+        sys.exit("curl not found")
+
+    total_mb = (args.a + args.b) * args.n
+    print(f"interleaving {args.a:g} MB and {args.b:g} MB, {args.n} pairs")
+    print(f"this transfers {total_mb:g} MB of metered cellular data")
+    if not args.yes:
+        try:
+            if input("proceed? [y/N] ").strip().lower() not in ("y", "yes"):
+                sys.exit("aborted")
+        except (EOFError, KeyboardInterrupt):
+            sys.exit("\naborted")
+
+    runs = []
+    t_start = time.monotonic()
+    print(f"\n{'#':>2} {'size':>7} {'t+':>7} {'duration':>9} {'throughput':>12}")
+    for i in range(args.n):
+        for size in (args.a, args.b):
+            mbps, elapsed, code = transfer(size, args.timeout)
+            offset = time.monotonic() - t_start
+            n = len(runs) + 1
+            if mbps is None:
+                print(f"{n:>2} {size:>6g}M {offset:>6.2f}s {elapsed:>8.3f}s "
+                      f"{'FAILED ' + code:>12}")
+                runs.append((size, None))
+                continue
+            print(f"{n:>2} {size:>6g}M {offset:>6.2f}s {elapsed:>8.3f}s "
+                  f"{mbps:>9.1f} Mbps")
+            runs.append((size, mbps))
+    span = time.monotonic() - t_start
+
+    a_vals = [m for s, m in runs if s == args.a and m is not None]
+    b_vals = [m for s, m in runs if s == args.b and m is not None]
+    if not a_vals or not b_vals:
+        sys.exit("\nnot enough successful transfers to compare")
+
+    a_mean, b_mean = statistics.fmean(a_vals), statistics.fmean(b_vals)
+    print(f"\nwhole run spanned {span:.2f} s")
+    print(f"{args.a:g} MB mean {a_mean:8.2f} Mbps  "
+          f"(spread {max(a_vals)/min(a_vals):.2f}x, n={len(a_vals)})")
+    print(f"{args.b:g} MB mean {b_mean:8.2f} Mbps  "
+          f"(spread {max(b_vals)/min(b_vals):.2f}x, n={len(b_vals)})")
+    hi, lo = (b_mean, a_mean) if b_mean >= a_mean else (a_mean, b_mean)
+    print(f"ratio {hi/lo:.2f}x")
+
+    # The overlap test is the finding. Two means differing is what a drifting
+    # link produces anyway; two non-overlapping distributions is not.
+    overlap = not (min(b_vals) > max(a_vals) or min(a_vals) > max(b_vals))
+    print()
+    if overlap:
+        print("SETS OVERLAP - size is not established as the variable here.")
+        print("A larger n, or a link that is steadier, would be needed to tell.")
+    else:
+        bigger = args.b if b_mean > a_mean else args.a
+        print(f"NO OVERLAP - every {bigger:g} MB run beat every other run.")
+        print("Transfer size determines the result on this link. A single-vs-"
+              "aggregate gap measured at the smaller size is a property of the "
+              "size, not a per-flow cap.")
+
+    pairs = [(a, b) for a, b in zip(a_vals, b_vals)]
+    won = sum(1 for a, b in pairs if (b > a) == (b_mean > a_mean))
+    print(f"consistent pairs: {won} of {len(pairs)}")
+
+
+if __name__ == "__main__":
+    main()

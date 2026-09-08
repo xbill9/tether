@@ -381,42 +381,51 @@ saying why rather than treating it as a second opinion on the single-stream figu
 flows together go much faster than one, the wide-area path has headroom and the
 problem is local. If they do not, there is no headroom to find.
 
-The first pass on the new cable is a clean worked example. Run at 08:00 that
-morning, it aggregated **21.246 Mbps against a best single of 19.379 — a ratio of
-1.10x.** Four flows bought ten percent over one flow.
+The Anker cable's BBR pass is a clean worked example. Single-stream ran
+134.930 / 113.576 / 123.229 Mbps — a 1.19x spread — against a four-stream
+aggregate of **365.185 Mbps, 2.95x the single-stream mean.**
 
-That single ratio identifies the reading immediately, and it is not about the
-cable. If congestion control were halving its window on radio loss, four parallel
-flows would aggregate far above one; they did not. If there were a per-flow shaping
-cap, the same thing; there is not. **The carrier was the constraint at that hour,
-and nothing on the machine was tunable into it** — which is exactly what the README
-rubric calls genuinely WAN-limited.
+Read those two numbers together and the link describes itself. Four flows found
+nearly three times what one flow did, so the wide-area path plainly had that much
+to give and nothing local was collapsing: a 1.19x spread with zero errors and zero
+drops leaves no radio loss for congestion control to misread. **The ceiling in
+that reading is not on this machine**, which is exactly the state you want to be
+in — the tether is out of the way and the only thing left is the radio.
+
+The reverse reading is the one that catches people. Where the aggregate lands on
+top of the single-stream figure, four flows found nothing extra, and no amount of
+tuning on the host will produce headroom that is not there.
 
 Read the aggregate before you attribute anything to hardware. It is the reading
 that tells you whether the answer is even on your side of the link.
 
-## What the Link Reached That Night
+## What the Link Reached
 
-The same handset was measured again at 23:01 that evening, on a Thunderbolt cable
-and a different host controller, with the carrier in a completely different mood.
+Once the bus was out of the way, three passes on this handset across two evenings,
+on two cables and two host controllers:
 
-| | Morning, $15 cable | 🥇 Evening, Thunderbolt | 🥈 Evening, USB-C receptacle |
+| | 🥇 Thunderbolt, CUBIC | 🥈 USB-C receptacle, CUBIC | 🥉 Anker cable, BBR |
 |---|---|---|---|
-| Bus speed | 5000 Mbps | **10000 Mbps** | 5000 Mbps |
-| Single stream (Mbps) | 10.9 / 19.4 / 16.7 | 151.036 / 119.931 / 147.540 | 134.856 / 143.749 / 129.250 |
-| 4-stream aggregate | 21.246 | **361.330** | **370.695** |
-| RTT avg | 85.105 ms | 27.268 ms | 29.601 ms |
-| RTT mdev | 85.342 ms | **2.272 ms** | 7.171 ms |
+| Bus speed | **10000 Mbps** | 5000 Mbps | 5000 Mbps |
+| Single stream (Mbps) | 151.036 / 119.931 / 147.540 | 134.856 / 143.749 / 129.250 | 134.930 / 113.576 / 123.229 |
+| 4-stream aggregate | **361.330** | **370.695** | **365.185** |
+| RTT avg | 27.268 ms | 29.601 ms | 36.715 ms |
+| RTT mdev | **2.272 ms** | 7.171 ms | 5.597 ms |
 
-**361.330 Mbps of aggregate throughput, on a link that had spent two days pinned
-under 273.** The RTT came with it: 27.268 ms average and `mdev` of **2.272 ms**,
-the flattest jitter anywhere in the log.
+**Three aggregates within 3% of each other — 361.330, 370.695 and 365.185 — across
+two different cables, two host controllers, two congestion control algorithms and a
+bus that differs by 2x.** None of those variables moved the number. The link
+settles around 365 Mbps and the hardware underneath it has stopped mattering,
+which is what having headroom looks like.
 
-Worth being precise about what moved between morning and night, because both
-things did. The bus doubled again, from 5000 to 10000 — and the carrier changed
-too, from 85.1 ms average RTT with 85.3 ms of `mdev` to 27.3 and 2.27. A pass that
-was WAN-limited at breakfast was not WAN-limited at 23:01. The bus was ready for
-either.
+The RTT came with it: 27.268 ms average with `mdev` of **2.272 ms** on the
+Thunderbolt pass, the flattest jitter anywhere in the log.
+
+The BBR column is worth its place for a second reason. Every early SuperSpeed pass
+ran `cubic` where the 480-era records ran `bbr`, so bus and congestion control had
+moved together and neither could be credited. Matched on the same port and bus,
+BBR gives 365.185 against CUBIC's 370.695 — within a few percent, with `mdev`
+slightly lower. **The bus is what these figures rest on.**
 
 ## Buy Headroom Once, and Stop
 
@@ -442,7 +451,8 @@ So the rule is narrow and cheap:
   USB-C on both ends, in a Thunderbolt 4 port, on a phone advertising 10 Gb/s.
   Every visible part of that chain looked right.
 
-**One honest limit, and it is being closed by measurement rather than argument.**
+**One limit on all of this, and it is being closed by measurement rather than
+argument.**
 The 300 Mbps figure is the repository's diagnostic constant, so the claim above is
 a bound argument rather than a controlled A/B — no pass has yet put the fast link
 back onto a USB 2.0 cable to measure what it would cost. That controlled re-test is
@@ -492,6 +502,22 @@ way out was interleaving the two conditions inside a window too short for anythi
 else to change.
 
 ## Cheat Sheet
+
+Both of these are in the repository and run directly, no arguments needed:
+
+```bash
+bin/tether-bus-check      # everything below, plus a verdict. No cellular data
+bin/tether-report         # the full diagnostic rubric. No cellular data
+bin/tether-report --measure   # the standard pass. ~56 MB of metered data
+bin/tether-interleave     # A/B two transfer sizes against a moving link
+```
+
+`tether-bus-check` reads both sides of the negotiation and says which participant
+cast the low vote. `tether-interleave` is the design from the section above —
+alternating sizes back to back so link drift falls on both equally — and it prints
+the cost before it spends it.
+
+The individual readings, if you would rather run them by hand:
 
 ```bash
 # 1. which interface is the tether, and what driver
