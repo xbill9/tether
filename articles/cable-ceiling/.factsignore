@@ -1,0 +1,3 @@
+# Purchase price of the cable, operator-supplied. It is a receipt, not a
+# measurement, and no host-observable artifact in tests/ carries it.
+$15
