@@ -1,9 +1,9 @@
 ---
-title: "The Cable Gets a Vote: Why a 10 Gb/s Phone Tethers at 480 Mbps"
+title: "The Cable Buys Headroom: 91% of a USB 2.0 Bus, 3.6% of a Thunderbolt One"
 published: false
-description: "USB link speed is autonegotiated between host, cable and device, the slowest one wins, and nothing anywhere tells you the cable capped you. Four cables and three ports on a 10 Gb/s phone stuck at 480 Mbps — and what the right cable bought, measured as bus headroom."
+description: "The best USB 2.0 pass in 45 tethering records used 91% of what that bus can usably carry. The same link on a SuperSpeed cable uses 3.6%. USB speed is autonegotiated between host, cable and device, the slowest one wins, and nothing anywhere tells you the cable capped you."
 tags: linux, networking, usb, debugging
-cover_image: https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/devto-cover.87c8a3ff.jpg
+cover_image: https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/devto-cover.567bed21.jpg
 ---
 
 This article walks through diagnosing a USB tether that would not negotiate above
@@ -16,6 +16,10 @@ participant in that negotiation, a USB 2.0 cable has no way to vote for anything
 above 480 Mbps, and **nothing anywhere reports that it happened.** The tether comes
 up, DHCP works, traffic flows, and the link is capped at a fifth of what both ends
 were offering.
+
+What the right cable buys is not speed. It is **headroom**, and the difference is
+not subtle: the best USB 2.0 pass in this log used **91% of what that bus can
+usably carry**, while the same link on a SuperSpeed cable uses **3.6%**.
 
 Every command below is one you can run against your own tether, and every number
 comes from a record in the repository:
@@ -325,10 +329,18 @@ in the log as a share of the bus it ran on and the picture is stark:
 | Pass | Bus | 4-stream aggregate | Share of the bus |
 |---|---|---|---|
 | 🥉 Best USB 2.0 pass in the log | 480 | 273 Mbps | **56.9%** of raw — and **91% of usable** |
-| 🥇 Anker USB-A to USB-C, BBR | 5000 | **365.185 Mbps** | 7.3% |
-| 🥇 Same receptacle, CUBIC | 5000 | **370.695 Mbps** | 7.4% |
-| 🥈 Thunderbolt cable | 10000 | **361.330 Mbps** | 3.6% |
-| 🥈 Thunderbolt, BBR | 10000 | 317.250 Mbps | 3.2% |
+| 🥈 Anker USB-A to USB-C, BBR | 5000 | **365.185 Mbps** | 7.3% |
+| 🥈 Same receptacle, CUBIC | 5000 | **370.695 Mbps** | 7.4% |
+| 🥇 Thunderbolt cable | 10000 | **361.330 Mbps** | **3.6%** |
+| 🥇 Thunderbolt, BBR | 10000 | 317.250 Mbps | 3.2% |
+
+**91% against 3.6% is the whole argument**, and the two denominators are worth
+naming so the comparison is read correctly. The 91% is 273 Mbps against the
+**usable** 300 Mbps of a 480 Mbps bus; the 3.6% is 361.330 against the **raw**
+10000, because this repository has no measured usable ceiling for a SuperSpeed bus
+and inventing one would be worse than the mismatch. Compared raw to raw it is
+**56.9% against 3.6%** — a factor of sixteen rather than twenty-five, and the same
+conclusion either way.
 
 *Share of the bus is arithmetic throughout — each record's 4-stream aggregate over
 its own `bus_speed_mbps`, so 273/480 = 56.9% and 365.185/5000 = 7.3%. The 91%
