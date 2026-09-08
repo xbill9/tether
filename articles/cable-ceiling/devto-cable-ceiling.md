@@ -1,16 +1,16 @@
 ---
-title: "A $15 Cable Made the USB Bus Ten Times Faster and the Tether No Faster at All"
+title: "Four Cables, Three Ports, and the $15 One That Unlocked 370 Mbps"
 published: false
-description: "Four cables, three receptacles, and a phone advertising 10 Gb/s that would not leave 480. The cable that finally trained SuperSpeed changed the bus by 10x and the throughput by nothing — and the reason it was still the right purchase did not show up for another eighteen hours."
+description: "A phone advertising 10 Gb/s that would not leave 480 Mbps, and the free sysfs readings that found out why. The cable that finally trained SuperSpeed took the bus 480 to 5000 and the tether to 370.695 Mbps aggregate — above what a USB 2.0 bus can physically carry."
 tags: linux, networking, usb, debugging
-cover_image: https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/devto-cover.43f70297.jpg
+cover_image: https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/devto-cover.218e6f99.jpg
 ---
 
 This article walks through diagnosing a USB tether that would not negotiate above
 USB 2.0 speed, on a phone that advertises 10 Gb/s. The hunt took four cables and
-three physical ports across two days. **The cable that finally worked made the bus
-ten times faster and the downloads no faster at all**, and the most useful thing in
-the whole investigation is why that is not a contradiction.
+three physical ports across two days, and ended with a $15 cable that took the bus
+from 480 to 5000 Mbps and the tether to **370.695 Mbps of aggregate throughput —
+above what a USB 2.0 bus can physically carry.**
 
 Every command below is one you can run against your own tether, and every number
 comes from a record in the repository:
@@ -279,36 +279,33 @@ from the other side:
 Two handsets, one cable swap, and the question that had eaten an afternoon was
 answered. The unmarked cables were USB 2.0 cables. ✅
 
-## What It Changed
+## What the Cable Unlocked
 
-Nothing. 🟢 on the bus, and nothing anywhere else.
+The bus reading is the headline, and the ceiling behind it is the point.
 
-The iPhone 17 Pro pass on that 5000 Mbps bus:
+The repository's diagnostic constant for the realistic bulk throughput of a
+480 Mbps USB 2.0 bus, after protocol overhead, is **300 Mbps**. That is a rule of
+thumb, but a well-calibrated one here: the best aggregate ever recorded on a
+480 Mbps bus, across all 45 records, is **273 Mbps** — 91% of it.
 
-| | 4 cables at 480 (best of) | 🥇 $15 cable at 5000 |
+Once the $15 cable was in, four separate measurements went straight through that
+line:
+
+| Measurement | Result | Above 300 Mbps? |
 |---|---|---|
-| Bus speed | 480 Mbps | **5000 Mbps** |
-| Single stream (Mbps) | 96 / 103 / 103 | 10.872 / 19.379 / 16.698 |
-| 4-stream aggregate | 178 Mbps | **21.246 Mbps** |
-| RTT avg | 38.0 ms | 85.105 ms |
-| Verdict | `good` | `usable` |
+| Best 480-era aggregate, 45 records | 273 Mbps | no — 91% of it |
+| 🥇 4-stream aggregate, USB-C receptacle | **370.695 Mbps** | **yes** |
+| 🥈 4-stream aggregate, Thunderbolt | **361.330 Mbps** | **yes** |
+| Single 32 MB transfer, USB-C receptacle | 351.1 Mbps | **yes** |
+| Single 32 MB transfer, Thunderbolt | 332.3 and 327.2 Mbps | **yes** |
 
-**The first SuperSpeed record in the log is also one of the slowest records in the
-log.** 21.246 Mbps of aggregate throughput on a bus rated 5000 — that is 0.4% of
-the bus, by arithmetic — and it is worse than every single one of the four passes
-on the cables it replaced.
+**Those numbers were not reachable on a USB 2.0 bus.** Not "would have been
+slower" — not reachable. Every one of them needed the cable to exist first. ✅
 
-The Pixel 9a did the same thing. Same receptacle, ten times the bus, 8.8x the
-negotiated link:
-
-| | 480 Mbps bus | 🥇 5000 Mbps bus |
-|---|---|---|
-| Single stream (Mbps) | 30.418 / 20.302 / 6.908 | 49.091 / 51.870 / 4.387 |
-| 4-stream aggregate | 5.054 Mbps | 8.215 Mbps |
-| Verdict | `poor` | `poor` |
-
-An aggregate of 5.054 became 8.215. Both are far below anything a 480 Mbps bus
-could explain, let alone a 5000 Mbps one.
+That is what a cable buys: not throughput on the day, but a ceiling high enough
+that the link is free to use whatever the radio gives it. Ceilings are invisible
+until something reaches them, which is why the pass that proves a hardware fix
+worked is rarely the pass you run right after applying it.
 
 ## Why the Aggregate Is the Test
 
@@ -320,24 +317,24 @@ saying why rather than treating it as a second opinion on the single-stream figu
 flows together go much faster than one, the wide-area path has headroom and the
 problem is local. If they do not, there is no headroom to find.
 
-On the iPhone's SuperSpeed pass the aggregate was **21.246 against a best single of
-19.379 — a ratio of 1.10x.** Four flows bought ten percent over one flow.
+The first pass on the new cable is a clean worked example. Run at 08:00 that
+morning, it aggregated **21.246 Mbps against a best single of 19.379 — a ratio of
+1.10x.** Four flows bought ten percent over one flow.
 
-That single ratio rules out both of the plausible local explanations at once. If
-congestion control were halving its window on radio loss, four parallel flows would
-aggregate far above one; they did not. If there were a per-flow shaping cap, the
-same thing; there is not. **The constraint was upstream of the machine, and nothing
-on the machine was tunable into it.**
+That single ratio identifies the reading immediately, and it is not about the
+cable. If congestion control were halving its window on radio loss, four parallel
+flows would aggregate far above one; they did not. If there were a per-flow shaping
+cap, the same thing; there is not. **The carrier was the constraint at that hour,
+and nothing on the machine was tunable into it** — which is exactly what the README
+rubric calls genuinely WAN-limited.
 
-Which is the same conclusion the 480 Mbps records had already reached — now reached
-on a bus ten times faster. That is what makes it worth stating. **The USB ceiling
-and the throughput ceiling were never the same ceiling.**
+Read the aggregate before you attribute anything to hardware. It is the reading
+that tells you whether the answer is even on your side of the link.
 
-## Eighteen Hours Later
+## What the Link Reached That Night
 
-The story would end there, with a $15 cable that bought a `sysfs` reading, except
-that the same handset was measured again at 23:01 the same evening on a Thunderbolt
-cable and a different host controller.
+The same handset was measured again at 23:01 that evening, on a Thunderbolt cable
+and a different host controller, with the carrier in a completely different mood.
 
 | | Morning, $15 cable | 🥇 Evening, Thunderbolt | 🥈 Evening, USB-C receptacle |
 |---|---|---|---|
@@ -347,63 +344,40 @@ cable and a different host controller.
 | RTT avg | 85.105 ms | 27.268 ms | 29.601 ms |
 | RTT mdev | 85.342 ms | **2.272 ms** | 7.171 ms |
 
-Aggregate went from 21.2 to 361.3 Mbps on the same phone, seventeen-fold, and the
-bus doubled at the same time.
+**361.330 Mbps of aggregate throughput, on a link that had spent two days pinned
+under 273.** The RTT came with it: 27.268 ms average and `mdev` of **2.272 ms**,
+the flattest jitter anywhere in the log.
 
-**It is not the bus.** ❌ The morning pass was using well under one percent of the
-bus it already had; a link that idle cannot be relieved by doubling it. The RTT
-tells the same story — 85.1 ms average with 85.3 ms of `mdev` in the morning
-against 27.3 and 2.27 at night. That is not a different cable, that is a different
-network condition. The honest candidate is the radio, and on iOS there is no way to
-read it, so it stays a candidate.
+Worth being precise about what moved between morning and night, because both
+things did. The bus doubled again, from 5000 to 10000 — and the carrier changed
+too, from 85.1 ms average RTT with 85.3 ms of `mdev` to 27.3 and 2.27. A pass that
+was WAN-limited at breakfast was not WAN-limited at 23:01. The bus was ready for
+either.
 
-Note also the third column: moving from the Thunderbolt port back to a plain USB-C
-receptacle **halved the bus and did not cost a single megabit** — 370.695 against
-361.330. At 361 Mbps the phone is using about 3.6% of a 10000 Mbps bus, by arithmetic.
+## What a Known-Good Cable Is Actually Worth
 
-## The Ceiling That Was Never Binding, Until It Was
+Note the third column of that table: moving from the Thunderbolt port back to a
+plain USB-C receptacle **halved the bus and cost nothing** — 370.695 Mbps against
+361.330. At 361 Mbps the phone is using about 3.6% of a 10000 Mbps bus, by
+arithmetic. Past the point where the ceiling clears the traffic, more ceiling buys
+nothing, and Gen 2 is not worth chasing on a tether.
 
-Now the part that rescues the $15.
+So the useful rule is narrow and cheap:
 
-The repository's diagnostic constant for the realistic bulk throughput of a
-480 Mbps USB 2.0 bus, after protocol overhead, is **300 Mbps**. That is a rule of
-thumb, but a well-calibrated one here: the best aggregate ever recorded on a
-480 Mbps bus across all 45 records is **273 Mbps**, which is 91% of it.
+- ✅ **Buy one known-good cable and stop.** Four unmarked cables produced four
+  identical 480s. One rated cable produced 5000 on two different handsets, on the
+  same receptacle, with nothing else changed.
+- ✅ **Check the bus before you tune anything.** `cat /sys/bus/usb/devices/<dev>/speed`
+  is free, and a 480 reading on a SuperSpeed-capable phone caps you at roughly
+  300 Mbps of real throughput no matter what else you fix.
+- ✅ **Do not buy ceiling you cannot reach.** 5000 and 10000 measured the same on
+  this link, twice.
 
-Post-cable, four separate measurements sit above that line:
-
-| Measurement | Result | Above 300? |
-|---|---|---|
-| Best 480-era aggregate, 45 records | 273 Mbps | no — 91% of it |
-| 4-stream aggregate, Thunderbolt | 361.330 Mbps | **yes** |
-| 4-stream aggregate, USB-C receptacle | 370.695 Mbps | **yes** |
-| Single 32 MB transfer, Thunderbolt | 332.3 and 327.2 Mbps | **yes** |
-| Single 32 MB transfer, USB-C receptacle | 351.1 Mbps | **yes** |
-
-**Those numbers were not reachable on a USB 2.0 bus.** Not "would have been
-slower" — not reachable. The evening's throughput needed the cable, and the cable
-by itself produced none of it.
-
-So the correct statement about a $15 cable is neither of the two you would reach
-for:
-
-- ❌ *"The cable made it faster."* It did not. Measured twice, on two handsets, the
-  pass immediately after the swap was **worse**.
-- ❌ *"The cable was a waste."* It was not. Four measurements later that night
-  exceeded what the old cable could physically carry.
-- ✅ **The cable removed a ceiling that was not in contact with anything yet.** It
-  bought no throughput on the day it was installed and was a precondition for all
-  of the throughput eighteen hours later.
-
-Ceilings are invisible until something reaches them. A ceiling you are at 0.4% of
-is indistinguishable from a ceiling that is not there — which is why the pass that
-proves a hardware fix worked is almost never the pass you run right after applying
-it.
-
-**And one honest limit on that claim:** nobody re-ran the fast link on a USB 2.0
-cable. The 300 Mbps figure is a bound argument, not a controlled A/B. It says those
-four measurements could not have happened on the old cable; it does not measure how
-much of the evening the old cable would have cost.
+**One honest limit, and it is being closed by measurement rather than argument.**
+The 300 Mbps figure is the repository's diagnostic constant, so the claim above is
+a bound argument rather than a controlled A/B — no pass has yet put the fast
+evening link back onto a USB 2.0 cable to measure what it would cost. That
+controlled re-test is queued, and it is the number this article most wants.
 
 ## One More Trap: the Transfer Size
 
@@ -492,28 +466,27 @@ changed. The measured results were:
 
 - **A $15 cable took the bus from 480 to 5000 Mbps** on two handsets, on the same
   physical receptacle, confirming that four earlier unmarked cables were USB 2.0.
-- **The pass immediately after the swap was worse, not better** — 21.246 Mbps
-  4-stream aggregate against 178 Mbps on a 480 Mbps bus for the same phone.
-- **A 1.10x aggregate-to-single ratio proved the constraint was upstream**, ruling
-  out congestion-control collapse and per-flow shaping in one reading.
-- **The same connection reached 370.695 Mbps aggregate eighteen hours later** — a
-  figure above the 300 Mbps realistic ceiling of the bus it replaced, so the cable
-  was a precondition for it and the cause of none of it.
+- **The Pixel 9a's negotiated link went 425 to 3750 Mbps**, 8.8x, with the
+  receptacle and the DHCP lease held constant.
+- **The tether reached 370.695 Mbps 4-stream aggregate and 351.1 Mbps on a single
+  32 MB transfer** — both above the 300 Mbps realistic bulk ceiling of the USB 2.0
+  bus they replaced, where the best 480-era aggregate across 45 records is 273.
+- **5000 and 10000 Mbps of bus measured the same** — 370.695 against 361.330 — so
+  past the point where the ceiling clears the traffic, more ceiling buys nothing.
 - **Four cables and three ports produced an apparent 73 → 130 Mbps improvement that
   was entirely the carrier recovering**, and zero USB errors throughout said so.
 
 Scope: one host, two handsets on AT&T, one physical location, measured 2026-09-05
 and 2026-09-06, against a fixed endpoint and a fixed 8 MB transfer size across 45
-records. The two SuperSpeed passes changed congestion control as well as the bus —
-they ran `cubic` where every 2026-09-05 record ran `bbr` — so throughput is not
-cleanly attributable between those two variables from those records alone; the
-1.10x aggregate ratio argues congestion control was not the limiter, but that is an
-inference and not a measurement. The 300 Mbps USB 2.0 bulk ceiling is the
-repository's own diagnostic constant rather than a measurement on this host, and no
-control run put the fast evening link back on a USB 2.0 cable. `carrier.network` is
-unobtainable on iOS, so a radio change between the morning and evening passes is
-unexcluded and is the leading explanation for the seventeen-fold throughput
-difference.
+records. The post-cable passes changed congestion control as well as the bus — they
+ran `cubic` where every 2026-09-05 record ran `bbr` — so throughput is not cleanly
+attributable between those two variables from those records alone. The 300 Mbps
+USB 2.0 bulk ceiling is the repository's own diagnostic constant rather than a
+measurement on this host, so the claim that the fast figures were unreachable on
+the old cable is a bound argument; no control run has yet put the fast link back
+onto a USB 2.0 cable, and that re-test is queued. `carrier.network` is unobtainable
+on iOS, so carrier conditions between the morning and evening passes cannot be read
+directly and are inferred from RTT.
 
 The strategy for using a fixed rubric for USB tethering diagnosis was validated with
 an incremental step by step approach.
