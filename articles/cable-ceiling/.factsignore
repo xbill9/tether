@@ -1,3 +1,8 @@
 # Purchase price of the cable, operator-supplied. It is a receipt, not a
 # measurement, and no host-observable artifact in tests/ carries it.
 $15
+
+# Share-of-bus percentages are arithmetic: a record's parallel_4_aggregate_mbps
+# over its own bus_speed_mbps (273/480 = 56.9%). Derivation is stated in the text
+# beneath the headroom table.
+56.9%

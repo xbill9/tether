@@ -5,6 +5,9 @@ the spread is the finding.
 
 | Date | Phone | Carrier | Driver | Bus | CC | Single (Mbps) | Par-4 | RTT avg | Verdict |
 |---|---|---|---|---|---|---|---|---|---|
+| 2026-09-08 | [iPhone 17 Pro](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt-retest.md) | AT&T | ipheth | 3.2 | bbr | 100.848 / 127.493 / 91.988 | 317.250 | 31.314 ms | good |
+| 2026-09-08 | [iPhone 17 Pro](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt.md) | AT&T | ipheth | 3.2 | bbr | 115.395 / 125.698 / 129.642 | 282.496 | 36.516 ms | good |
+| 2026-09-08 | [iPhone 17 Pro](tests/2026-09-08-iphone-17-pro-att-bbr.md) | AT&T | ipheth | 3.0 | bbr | 134.930 / 113.576 / 123.229 | 365.185 | 36.715 ms | good |
 | 2026-09-06 | [iPhone 17 Pro](tests/2026-09-06-iphone-17-pro-att-usbc-port.md) | AT&T | ipheth | 3.0 | cubic | 134.856 / 143.749 / 129.250 | 370.695 | 29.601 ms | good |
 | 2026-09-06 | [iPhone 17 Pro](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md) | AT&T | ipheth | 3.2 | cubic | 151.036 / 119.931 / 147.540 | 361.330 | 27.268 ms | good |
 | 2026-09-06 | [iPhone 16e](tests/2026-09-06-iphone-16e-google-fi-cubic.md) | Google Fi | ipheth | 2.0 | cubic | 25.449 / 46.284 / 54.240 | 79.867 | 39.181 ms | usable |
@@ -65,9 +68,21 @@ the spread is the finding.
       fault is in the host"; a cable swap answered it without needing a
       cable-free attach. **The four-cable, three-port hunt was chasing a ceiling
       that was never binding: the same phone on a 5000 Mbps bus managed 21 Mbps
-      aggregate, and the pass came out WAN-limited.** Still untried: a Gen 2
-      cable - the device advertises USB 3.2 on a 10 Gb/s port but trained at
-      5 Gb/s.
+      aggregate, and the pass came out WAN-limited.**
+      ~~Still untried: a Gen 2 cable - the device advertises USB 3.2 on a
+      10 Gb/s port but trained at 5 Gb/s.~~ **Answered 2026-09-08.** The
+      USB-A cable is an **Anker USB-C to USB-A, USB 3.0** - Gen 1, rated
+      5 Gbps - so *the cable* set that 5000, not the phone. A Thunderbolt
+      USB-C to USB-C cable on the TB4 port trains the full **10000**
+      ([record](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt.md)), and
+      the handset's BOS descriptor carries a SuperSpeedPlus capability
+      advertising 10 Gb/s symmetric RX and TX. **Read all four capability
+      blocks**: `wSpeedsSupported` in the SuperSpeed block stops at 5 Gbps by
+      construction, and reading only that block produced a wrong ceiling claim
+      that had to be corrected in
+      [the usb4 record](tests/2026-09-08-iphone-17-pro-att-bbr.md).
+      **It bought nothing.** Doubling the bus left single-stream identical to
+      three significant figures (123.9 -> 123.6 Mbps mean).
 - [x] ~~**Find the Thunderbolt 4 port.**~~ **Found 2026-09-05 in
       `/sys/class/typec`, and it had already been tested.** The kernel binds each
       Type-C connector to both its USB ports at boot: `port0` = `3-1` + `4-1`
@@ -128,6 +143,20 @@ the spread is the finding.
       and 17 MB return `403 Forbidden` with a 1-byte body; 8, 20, 24 and 32 MB
       return 200. Reproduced interleaved, so not rate limiting. Cause unknown -
       worth knowing before picking a diagnostic size.
+- [x] **Establish the AT&T prefixes rather than assuming them.** Many records
+      here hedge `carrier.name` with "the prefix alone does not establish it".
+      **Checked 2026-09-08:** `2600:381::/32` *and* `2600:382::/32` both return
+      **AT&T Enterprises, LLC**, `NetName: ATTMOV6-1` - one AT&T Mobility v6
+      allocation. So the 381/382 switch several records flag as unexplained is
+      movement inside a single netblock and says nothing about the carrier, and
+      a delegation from either is strong corroboration on its own. Noted here
+      rather than edited into all twelve affected records; the two 2026-09-08
+      records and the
+      [09-06 Thunderbolt record](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md),
+      which raised the discrepancy explicitly, carry it inline. The Google Fi
+      caveat still applies in reverse: a delegation identifies the *host
+      network*, and an MVNO is indistinguishable from its host by prefix, so
+      this argument is only this strong for a carrier that owns its allocation.
 - [ ] Capture `gsm.network.type` during a pass on the four records that still
       have `carrier.network` blank - or accept that they cannot be filled
       retrospectively and leave them.
@@ -154,20 +183,46 @@ the spread is the finding.
       recovers, a volume-triggered carrier throttle is live; if not, it is not
       volume. Costs 24 MB and replaces a hypothesis currently resting on two
       uncontrolled passes.
-- [ ] **Run the parallel test *before* the singles, once.** Every record in this
-      log runs singles then parallel, so "the link decayed mid-pass" and "four
-      flows genuinely do worse than one" are indistinguishable in all of them -
-      including the three passes where the aggregate came out *below* the
-      slowest single. Reversing the order on one pass separates them for the
-      whole log. Applies to the skill, not to one phone.
-- [ ] **Re-run the iPhone 17 Pro SuperSpeed pass under BBR.** The 2026-09-06
-      record moved two variables at once: the bus went 480 -> 5000 *and* the
-      host's TCP settings reverted to stock (`cubic` / `slow_start_after_idle=1`
-      / `mtu_probing=0`), where every 2026-09-05 record ran `bbr` / `0` / `1`.
-      Until there is a matching BBR pass, that record cannot be compared with
-      any iPhone number already in the log. The 1.10x aggregate-to-single ratio
-      argues congestion control is not the limiter, but that is an inference,
-      not a measurement.
+- [x] ~~**Run the parallel test *before* the singles, once.**~~ **Done
+      2026-09-08, bracketed** - a parallel-4 both before and after the singles
+      ([record](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt-retest.md)).
+      **Opening 317.069, closing 317.250 - agreement to 0.06%.** So the
+      ordering is **not** a systematic confound: on a stable link the aggregate
+      lands on the same number whether it is measured first or last, and every
+      existing record in this log is safe on that count.
+      What the confound really is, is *conditional*. It bites only when the
+      link is decaying, and that was caught in the act earlier the same day
+      ([record](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt.md)):
+      opening singles 115.4 / 125.7 / 129.6 against closing singles 77.2 /
+      110.3 / 118.1, two identical 32 MB transfers 1.31x apart, and an
+      aggregate of 282.496 that the stable retest showed to be **12.3%
+      understated** (317.250, with `mdev` halved from 8.159 to 3.810).
+      **Recommend adopting the bracket as standard practice.** A second
+      parallel-4 costs 32 MB and converts "was the link stable during this
+      pass?" from a judgement call into a measurement - if the two aggregates
+      disagree, the record is contaminated and you know it before writing it
+      down. Applies to the skill, not to one phone.
+- [x] ~~**Re-run the iPhone 17 Pro SuperSpeed pass under BBR.**~~ **Done
+      2026-09-08** ([record](tests/2026-09-08-iphone-17-pro-att-bbr.md)). Same
+      handset, same `0000:00:14.0` controller, same 5000 bus, now under `bbr` /
+      `slow_start_after_idle=0` / `mtu_probing=1`. **The inference held:
+      congestion control is not the limiter.** Against the CUBIC
+      [USB-C port pass](tests/2026-09-06-iphone-17-pro-att-usbc-port.md) the
+      aggregate moved 370.695 -> 365.185 and the single-stream mean 136.0 ->
+      123.9 - a few percent, on a clean radio with zero errors and zero drops,
+      which is the README's rule-3 case where BBR has no loss to repair. Jitter
+      did not degrade either: `mdev` 5.597 against CUBIC's 7.171.
+      **It also cleared the host port.** The
+      [2026-09-06 SuperSpeed pass](tests/2026-09-06-iphone-17-pro-att-superspeed.md)
+      managed a 21.246 Mbps aggregate on this same port and bus and blamed the
+      radio circumstantially; the same port now gives 365.185, **17.2x**, with
+      RTT 36.7 ms / `mdev` 5.60 against that morning's 85.1 / 85.3. The port is
+      not the problem.
+      **And the transfer-size effect reproduced under BBR** - interleaved 8/32 MB
+      across 2.94 s gave means of 128.0 and 274.0 Mbps, 2.14x, no overlap. The
+      two earlier confirmations were both CUBIC, so this rules out a CUBIC
+      slow-start artifact. One loose end: the 32 MB single reached only 0.75x
+      the aggregate here where CUBIC reached 0.90-0.95x, on two samples.
 - [x] ~~**Reinstall `adb` *and* `libimobiledevice-utils`.**~~ **Done
       2026-09-06.** The host changed between 2026-09-05 and 2026-09-06 and
       neither tool survived it; `adb 1:34.0.5-12` and
