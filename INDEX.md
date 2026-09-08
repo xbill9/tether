@@ -67,9 +67,21 @@ the spread is the finding.
       fault is in the host"; a cable swap answered it without needing a
       cable-free attach. **The four-cable, three-port hunt was chasing a ceiling
       that was never binding: the same phone on a 5000 Mbps bus managed 21 Mbps
-      aggregate, and the pass came out WAN-limited.** Still untried: a Gen 2
-      cable - the device advertises USB 3.2 on a 10 Gb/s port but trained at
-      5 Gb/s.
+      aggregate, and the pass came out WAN-limited.**
+      ~~Still untried: a Gen 2 cable - the device advertises USB 3.2 on a
+      10 Gb/s port but trained at 5 Gb/s.~~ **Answered 2026-09-08.** The
+      USB-A cable is an **Anker USB-C to USB-A, USB 3.0** - Gen 1, rated
+      5 Gbps - so *the cable* set that 5000, not the phone. A Thunderbolt
+      USB-C to USB-C cable on the TB4 port trains the full **10000**
+      ([record](tests/2026-09-08-iphone-17-pro-att-bbr-thunderbolt.md)), and
+      the handset's BOS descriptor carries a SuperSpeedPlus capability
+      advertising 10 Gb/s symmetric RX and TX. **Read all four capability
+      blocks**: `wSpeedsSupported` in the SuperSpeed block stops at 5 Gbps by
+      construction, and reading only that block produced a wrong ceiling claim
+      that had to be corrected in
+      [the usb4 record](tests/2026-09-08-iphone-17-pro-att-bbr.md).
+      **It bought nothing.** Doubling the bus left single-stream identical to
+      three significant figures (123.9 -> 123.6 Mbps mean).
 - [x] ~~**Find the Thunderbolt 4 port.**~~ **Found 2026-09-05 in
       `/sys/class/typec`, and it had already been tested.** The kernel binds each
       Type-C connector to both its USB ports at boot: `port0` = `3-1` + `4-1`

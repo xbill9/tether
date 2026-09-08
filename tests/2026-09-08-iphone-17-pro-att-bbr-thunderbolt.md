@@ -14,7 +14,7 @@ usb:
   driver: ipheth
   bus_speed_mbps: 10000
   negotiated_link_mbps:   # ipheth does not report one - /sys/class/net/<if>/speed returns EINVAL
-  cable:                  # TODO operator not asked; the port move was made by the operator mid-session
+  cable: "Thunderbolt, USB-C to USB-C"   # operator-supplied, backfilled 2026-09-08
 link:
   interface: enxb65575abcda3
   ipv4: 172.20.10.5/28
@@ -71,6 +71,15 @@ same device carried the whole pass.
 
 TCP settings were unchanged from the earlier pass: `bbr`,
 `slow_start_after_idle=0`, `mtu_probing=1`.
+
+**`usb.cable` backfilled 2026-09-08 from the operator: a Thunderbolt USB-C to
+USB-C cable**, where the earlier pass ran an Anker USB-C to USB-A USB 3.0
+cable. That is the whole explanation for 5000 against 10000. The Anker cable is
+Gen 1 and rated 5 Gbps, so it - not the phone - set the earlier ceiling; this
+handset's BOS descriptor carries a SuperSpeedPlus capability advertising
+**10 Gb/s symmetric RX and TX**, and with a cable able to carry it the device
+trains the full 10000. The earlier record's claim that 5000 was the device's
+own ceiling has been corrected accordingly.
 
 **Wi-Fi was disabled at the radio this time** (`nmcli radio wifi off`), not just
 downed, after NetworkManager restored the link mid-pass on the previous run.
@@ -167,9 +176,9 @@ throughout, so this is not cable, power or host - it is upstream.
 
 `carrier.network` is blank for the usual structural reason on iOS.
 `carrier.name` is carried forward on the matching `2600:381::/32` delegation
-and was **not** operator-confirmed this session. `usb.cable` is blank - the
-operator made the port move and was not asked which cable went with it, and
-whether the Thunderbolt cable from 2026-09-06 was reused is unknown.
+and was **not** operator-confirmed this session. `usb.cable` was blank at test
+time and was **backfilled 2026-09-08** from the operator as a Thunderbolt
+USB-C to USB-C cable; it was not observed by the host.
 
 ## Follow-ups
 
@@ -180,6 +189,11 @@ whether the Thunderbolt cable from 2026-09-06 was reused is unknown.
   pass is the clearest argument yet for it. Every aggregate in this log is
   measured last, so decay and genuine multi-flow behaviour remain
   indistinguishable in all of them.
-- Confirm the cable and the carrier with the operator and backfill both fields.
+- ~~Confirm the cable with the operator and backfill the field.~~ **Done
+  2026-09-08** - Thunderbolt USB-C to USB-C. `carrier.name` is still
+  unconfirmed.
 - Bus speed above 480 still has no measured consequence anywhere in this log,
-  now including the only two 10000 Mbps records in it.
+  now including both of its 10000 Mbps records. **The cable determines the
+  enumerated speed and nothing else that matters**: swapping Gen 1 for
+  Thunderbolt doubled the bus and left single-stream throughput identical to
+  three significant figures.

@@ -14,7 +14,7 @@ usb:
   driver: ipheth
   bus_speed_mbps: 5000
   negotiated_link_mbps:   # ipheth does not report one - /sys/class/net/<if>/speed returns EINVAL
-  cable:                  # TODO operator not asked; the phone was already attached when this session started
+  cable: "Anker USB-C to USB-A, USB 3.0"   # operator-supplied, backfilled 2026-09-08 - see Setup
 link:
   interface: enxb65575abcda3
   ipv4: 172.20.10.5/28
@@ -57,10 +57,29 @@ and `bcdDevice 18.01` corroborates it.
 
 **This is the same host controller as the SuperSpeed and USB-C port records** -
 `0000:00:14.0` / `usb4`, with the device enumerating at **5000**. Not the
-`0000:00:0d.0` Thunderbolt controller that produced the log's only 10000
-reading. The BOS descriptor still advertises `bcdUSB 3.20`, four device
-capabilities and "Device can operate at SuperSpeed (5Gbps)", so the 5000 is the
-device's ceiling on this controller and not a cable artifact.
+`0000:00:0d.0` Thunderbolt controller.
+
+**Corrected 2026-09-08, when `usb.cable` was backfilled.** This paragraph
+originally read that "the 5000 is the device's ceiling on this controller and
+not a cable artifact", on the strength of a BOS descriptor advertising
+`bcdUSB 3.20` and "Device can operate at SuperSpeed (5Gbps)". **That was
+wrong, and it was wrong because only part of the descriptor was read.** The
+`wSpeedsSupported` field of the SuperSpeed capability stops at 5 Gbps by
+construction - SuperSpeedPlus rates are declared in a *separate* capability
+block, and this device has one:
+
+    SuperSpeedPlus USB Device Capability:
+      bmSublinkSpeedAttr[0]   0x000a4030
+        Speed Attribute ID: 0 10Gb/s Symmetric RX SuperSpeedPlus
+      bmSublinkSpeedAttr[1]   0x000a40b0
+        Speed Attribute ID: 0 10Gb/s Symmetric TX SuperSpeedPlus
+
+The operator has since confirmed the cable as an **Anker USB-C to USB-A, USB
+3.0** - a Gen 1 cable, rated 5 Gbps. So **5000 was the cable's ceiling, not the
+device's**, and the [Thunderbolt pass](2026-09-08-iphone-17-pro-att-bbr-thunderbolt.md)
+taken an hour later proves it directly by training **10000** on the same
+handset with a Thunderbolt cable. Read only the capability block that matches
+the speed you are trying to explain, and read all four.
 
 **Congestion control was `bbr`, not the `cubic` of every previous iPhone
 record**, with `tcp_slow_start_after_idle=0` and `tcp_mtu_probing=1` - all
@@ -150,18 +169,23 @@ or check the counters afterwards as was done here.
 here. `carrier.name` is carried forward as AT&T on the `2600:381::/32`
 delegation matching this handset's earlier records; it was **not**
 operator-confirmed this session, and the prefix alone does not establish it.
-`usb.cable` is blank because the phone was already connected when the session
-began and the operator was not asked.
+`usb.cable` was blank at test time - the phone was already connected when the
+session began - and was **backfilled 2026-09-08** from the operator as an Anker
+USB-C to USB-A USB 3.0 cable. It was not observed by the host, and it corrected
+a wrong claim in Setup; see there.
 
 ## Follow-ups
 
 - ~~Re-test the earlier SuperSpeed configuration to separate "the radio was bad
   that morning" from "that host port is bad".~~ **Done here.** The port is
   fine; the morning's 21.2 Mbps aggregate was not caused by it.
-- Confirm the cable and the carrier with the operator and backfill both fields.
+- ~~Confirm the cable with the operator and backfill the field.~~ **Done
+  2026-09-08** - Anker USB-C to USB-A, USB 3.0, and it overturned the ceiling
+  claim in Setup. `carrier.name` is still unconfirmed.
 - The 32 MB single reached only 0.75x the aggregate under BBR where CUBIC
   reached 0.90-0.95x. Worth more than two samples if anyone wants to know
   whether that is real.
 - Still nothing approaching the bus ceiling: 365 Mbps aggregate on a 5000 Mbps
   bus is 7% of it. `bus_speed_mbps` above 480 continues to have no measured
-  consequence anywhere in this log.
+  consequence anywhere in this log - and note that the cable *did* bind the
+  enumerated bus speed here while having no effect whatever on throughput.
