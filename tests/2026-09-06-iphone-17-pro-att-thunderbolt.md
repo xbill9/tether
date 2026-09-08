@@ -190,6 +190,14 @@ rather than the `2600:381::/32` recorded before. Both are consistent with the
 same carrier, but the prefix alone does not establish it and it was not
 re-confirmed tonight.
 
+**Resolved 2026-09-08 (backfilled note; no measurement changed).** The operator
+re-confirmed AT&T, and the two prefixes were looked up rather than assumed:
+`2600:381::/32` and `2600:382::/32` both return **AT&T Enterprises, LLC**,
+`NetName: ATTMOV6-1` - the same AT&T Mobility v6 allocation. The switch between
+them across sessions is movement inside one carrier's netblock and carries no
+information about which carrier was in use. The hedge above stands as written
+for the state of knowledge at the time; it is answered, not deleted.
+
 ## Follow-ups
 
 - ~~Run the per-flow experiment.~~ **Done 2026-09-06, immediately

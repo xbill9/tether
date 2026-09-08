@@ -6,7 +6,7 @@ phone:
   model: iPhone 17 Pro (iPhone18,1)   # read over usbmuxd (ideviceinfo); corroborated by bcdDevice=18.01
   os: iOS 27.0                        # read over usbmuxd (ideviceinfo -k ProductVersion)
 carrier:
-  name: AT&T         # not re-confirmed this session; delegation is 2600:381::/32, matching this handset's earlier records
+  name: AT&T         # operator-confirmed 2026-09-08 (backfilled); independently corroborated - 2600:381::/32 is registered to AT&T Enterprises, LLC, NetName ATTMOV6-1
   network:           # TODO not obtainable - iOS exposes no adb equivalent for cellular radio type
 usb:
   vendor_id: "05ac"
@@ -175,8 +175,10 @@ earlier passes as though conditions were equal. Errors and drops were zero
 throughout, so this is not cable, power or host - it is upstream.
 
 `carrier.network` is blank for the usual structural reason on iOS.
-`carrier.name` is carried forward on the matching `2600:381::/32` delegation
-and was **not** operator-confirmed this session. `usb.cable` was blank at test
+`carrier.name` was carried on the matching `2600:381::/32` delegation at test
+time and has since been **operator-confirmed as AT&T and backfilled
+2026-09-08**, with a registry lookup of that /32 returning **AT&T Enterprises,
+LLC, `NetName: ATTMOV6-1`** as independent corroboration. `usb.cable` was blank at test
 time and was **backfilled 2026-09-08** from the operator as a Thunderbolt
 USB-C to USB-C cable; it was not observed by the host.
 

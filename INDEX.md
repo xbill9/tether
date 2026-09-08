@@ -142,6 +142,20 @@ the spread is the finding.
       and 17 MB return `403 Forbidden` with a 1-byte body; 8, 20, 24 and 32 MB
       return 200. Reproduced interleaved, so not rate limiting. Cause unknown -
       worth knowing before picking a diagnostic size.
+- [x] **Establish the AT&T prefixes rather than assuming them.** Many records
+      here hedge `carrier.name` with "the prefix alone does not establish it".
+      **Checked 2026-09-08:** `2600:381::/32` *and* `2600:382::/32` both return
+      **AT&T Enterprises, LLC**, `NetName: ATTMOV6-1` - one AT&T Mobility v6
+      allocation. So the 381/382 switch several records flag as unexplained is
+      movement inside a single netblock and says nothing about the carrier, and
+      a delegation from either is strong corroboration on its own. Noted here
+      rather than edited into all twelve affected records; the two 2026-09-08
+      records and the
+      [09-06 Thunderbolt record](tests/2026-09-06-iphone-17-pro-att-thunderbolt.md),
+      which raised the discrepancy explicitly, carry it inline. The Google Fi
+      caveat still applies in reverse: a delegation identifies the *host
+      network*, and an MVNO is indistinguishable from its host by prefix, so
+      this argument is only this strong for a carrier that owns its allocation.
 - [ ] Capture `gsm.network.type` during a pass on the four records that still
       have `carrier.network` blank - or accept that they cannot be filled
       retrospectively and leave them.

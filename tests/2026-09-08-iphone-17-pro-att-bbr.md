@@ -6,7 +6,7 @@ phone:
   model: iPhone 17 Pro (iPhone18,1)   # read over usbmuxd (ideviceinfo); corroborated by bcdDevice=18.01
   os: iOS 27.0                        # read over usbmuxd (ideviceinfo -k ProductVersion)
 carrier:
-  name: AT&T         # not re-confirmed this session; delegation is 2600:381::/32, matching the earlier AT&T records for this handset
+  name: AT&T         # operator-confirmed 2026-09-08 (backfilled); independently corroborated - 2600:381::/32 is registered to AT&T Enterprises, LLC, NetName ATTMOV6-1
   network:           # TODO not obtainable - iOS exposes no adb equivalent for cellular radio type
 usb:
   vendor_id: "05ac"
@@ -166,9 +166,14 @@ repeating this should mask the connection rather than just downing the link,
 or check the counters afterwards as was done here.
 
 `carrier.network` is blank for the same structural reason as every iOS record
-here. `carrier.name` is carried forward as AT&T on the `2600:381::/32`
-delegation matching this handset's earlier records; it was **not**
-operator-confirmed this session, and the prefix alone does not establish it.
+here. `carrier.name` was carried on the `2600:381::/32` delegation at test time
+and has since been **operator-confirmed as AT&T and backfilled 2026-09-08**. It
+is now independently corroborated too: a registry lookup of that /32 returns
+**AT&T Enterprises, LLC, `NetName: ATTMOV6-1`** - AT&T's mobility v6
+allocation. Earlier records here noted that "the prefix alone does not
+establish it"; with the allocation actually checked rather than assumed it
+very nearly does, and with the operator's confirmation alongside it this field
+is no longer a weak point.
 `usb.cable` was blank at test time - the phone was already connected when the
 session began - and was **backfilled 2026-09-08** from the operator as an Anker
 USB-C to USB-A USB 3.0 cable. It was not observed by the host, and it corrected
