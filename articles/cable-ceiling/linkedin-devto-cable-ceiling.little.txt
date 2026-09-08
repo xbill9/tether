@@ -1,0 +1,14 @@
+The Cable Buys Headroom: 91% of a USB 2.0 Bus, 3.6% of a Thunderbolt One
+
+The best USB 2.0 pass in 45 tethering records used 91% of what that bus can usably carry. The same link on a SuperSpeed cable uses 3.6%. USB speed is autonegotiated between host, cable and device, the slowest one wins, and nothing anywhere tells you the cable capped you.
+
+What is in it:
+
+- A $15 cable took the bus from 480 to 5000 Mbps on two handsets, on the same physical receptacle, confirming that four earlier unmarked cables voted 480.
+- The Pixel 9a's negotiated link went 425 to 3750 Mbps, 8.8x, with the receptacle and the DHCP lease held constant.
+- Headroom went from 91% consumed to about 7% consumed. The best USB 2.0 pass in 45 records used 91% of what that bus can usably carry; the best SuperSpeed passes use 7.3% and 7.4% of theirs.
+- Four aggregates cleared 300 Mbps — 370.695, 365.185 and 361.330, plus a 351.1 Mbps single 32 MB transfer — none of them reachable on a USB 2.0 bus.
+
+dev.to \(Google Developer Experts\): https://dev.to/gde/the-cable-buys-headroom-91-of-a-usb-20-bus-36-of-a-thunderbolt-one-563n
+AWS Builder Center: https://builder.aws.com/content/3J3VWBE9Y96o1s2qr9XSe3vvyhQ/the-cable-buys-headroom-91percent-of-a-usb-20-bus-36percent-of-a-thunderbolt-one
+Source: https://github.com/xbill9/tether

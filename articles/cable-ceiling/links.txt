@@ -1,0 +1,10 @@
+# One key = url per line. PENDING fails the run by design, so a post cannot go
+# out carrying a link that does not resolve yet.
+
+devto-gde = https://dev.to/gde/the-cable-buys-headroom-91-of-a-usb-20-bus-36-of-a-thunderbolt-one-563n
+builder   = https://builder.aws.com/content/3J3VWBE9Y96o1s2qr9XSe3vvyhQ/the-cable-buys-headroom-91percent-of-a-usb-20-bus-36percent-of-a-thunderbolt-one
+repo      = https://github.com/xbill9/tether
+
+# medium: the story is a DRAFT (medium.com/p/639bec14718e). A draft URL does not
+# resolve for a reader, so it stays out of the post until it is published. Add:
+# medium = https://xbill999.medium.com/<slug>-639bec14718e
