@@ -4,7 +4,4 @@
 devto-gde = https://dev.to/gde/the-cable-buys-headroom-91-of-a-usb-20-bus-36-of-a-thunderbolt-one-563n
 builder   = https://builder.aws.com/content/3J3VWBE9Y96o1s2qr9XSe3vvyhQ/the-cable-buys-headroom-91percent-of-a-usb-20-bus-36percent-of-a-thunderbolt-one
 repo      = https://github.com/xbill9/tether
-
-# medium: the story is a DRAFT (medium.com/p/639bec14718e). A draft URL does not
-# resolve for a reader, so it stays out of the post until it is published. Add:
-# medium = https://xbill999.medium.com/<slug>-639bec14718e
+medium    = https://xbill999.medium.com/the-cable-buys-headroom-91-of-a-usb-2-0-bus-3-6-of-a-thunderbolt-one-639bec14718e
