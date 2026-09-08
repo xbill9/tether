@@ -1,10 +1,6 @@
----
-title: "The Cable Buys Headroom: 91% of a USB 2.0 Bus, 3.6% of a Thunderbolt One"
-published: false
-description: "The best USB 2.0 pass in 45 tethering records used 91% of what that bus can usably carry. The same link on a SuperSpeed cable uses 3.6%. USB speed is autonegotiated between host, cable and device, the slowest one wins, and nothing anywhere tells you the cable capped you."
-tags: linux, networking, usb, debugging
-cover_image: https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/devto-cover.567bed21.jpg
----
+# The Cable Buys Headroom: 91% of a USB 2.0 Bus, 3.6% of a Thunderbolt One
+
+*Subtitle: USB link rate is autonegotiated between host, cable and device, and the slowest one wins*
 
 This article walks through diagnosing a USB tether that would not negotiate above
 USB 2.0 speed, on a phone that advertises 10 Gb/s. The hunt took four cables and
@@ -267,7 +263,7 @@ Throughput was measured on every one of those passes, and it moved a great deal:
 | 13:26 cable 3 | 55 / 25 / 68 | 101 | 45.9 ms | 9.3 ms |
 | 14:07 cable 4 | 76 / 58 / 61 | **130** | 52.1 ms | 12.1 ms |
 
-Aggregate climbed 73 → 85 → 101 → 130 across four consecutive cable swaps. Every
+Aggregate climbed 73  85  101  130 across four consecutive cable swaps. Every
 new cable looked better than the one before it.
 
 **None of that is a cable effect.** The carrier was recovering from a dip across
@@ -316,7 +312,7 @@ from the other side:
 | Negotiated link | 425 Mbps | **3750 Mbps** |
 
 Two handsets, one cable swap, and the question that had eaten an afternoon was
-answered. The unmarked cables were USB 2.0 cables. ✅
+answered. The unmarked cables were USB 2.0 cables.
 
 ## What the Cable Unlocked: Headroom
 
@@ -329,11 +325,11 @@ in the log as a share of the bus it ran on and the picture is stark:
 
 | Pass | Bus | 4-stream aggregate | Share of the bus |
 |---|---|---|---|
-| 🥉 Best USB 2.0 pass in the log | 480 | 273 Mbps | **56.9%** of raw — and **91% of usable** |
-| 🥈 Anker USB-A to USB-C, BBR | 5000 | **365.185 Mbps** | 7.3% |
-| 🥈 Same receptacle, CUBIC | 5000 | **370.695 Mbps** | 7.4% |
-| 🥇 Thunderbolt cable | 10000 | **361.330 Mbps** | **3.6%** |
-| 🥇 Thunderbolt, BBR | 10000 | 317.250 Mbps | 3.2% |
+|  Best USB 2.0 pass in the log | 480 | 273 Mbps | **56.9%** of raw — and **91% of usable** |
+|  Anker USB-A to USB-C, BBR | 5000 | **365.185 Mbps** | 7.3% |
+|  Same receptacle, CUBIC | 5000 | **370.695 Mbps** | 7.4% |
+|  Thunderbolt cable | 10000 | **361.330 Mbps** | **3.6%** |
+|  Thunderbolt, BBR | 10000 | 317.250 Mbps | 3.2% |
 
 **91% against 3.6% is the whole argument**, and the two denominators are worth
 naming so the comparison is read correctly. The 91% is 273 Mbps against the
@@ -370,7 +366,7 @@ Four of those measurements also clear the 300 Mbps line outright:
 
 **Those numbers were not reachable on a USB 2.0 bus.** Not "would have been
 slower" — not reachable. Every one of them needed a cable that could vote for
-SuperSpeed. ✅
+SuperSpeed.
 
 ## Why the Aggregate Is the Test
 
@@ -405,7 +401,7 @@ that tells you whether the answer is even on your side of the link.
 Once the bus was out of the way, three passes on this handset across two evenings,
 on two cables and two host controllers:
 
-| | 🥇 Thunderbolt, CUBIC | 🥈 USB-C receptacle, CUBIC | 🥉 Anker cable, BBR |
+| |  Thunderbolt, CUBIC |  USB-C receptacle, CUBIC |  Anker cable, BBR |
 |---|---|---|---|
 | Bus speed | **10000 Mbps** | 5000 Mbps | 5000 Mbps |
 | Single stream (Mbps) | 151.036 / 119.931 / 147.540 | 134.856 / 143.749 / 129.250 | 134.930 / 113.576 / 123.229 |
@@ -439,16 +435,16 @@ tether.
 
 So the rule is narrow and cheap:
 
-- ✅ **One known-good cable, then stop.** Four unmarked cables cast four identical
+-  **One known-good cable, then stop.** Four unmarked cables cast four identical
   480 votes. One rated cable produced 5000 on two different handsets, on the same
   receptacle, with nothing else changed.
-- ✅ **Read the bus before you tune anything.** `cat /sys/bus/usb/devices/<dev>/speed`
+-  **Read the bus before you tune anything.** `cat /sys/bus/usb/devices/<dev>/speed`
   is free, and a 480 reading on a SuperSpeed-capable phone caps you at roughly
   300 Mbps of real throughput no matter what else you fix.
-- ✅ **Do not buy ceiling you cannot reach.** 5000 and 10000 measured the same on
+-  **Do not buy ceiling you cannot reach.** 5000 and 10000 measured the same on
   this link, repeatedly. Headroom is binary in practice: you either have enough or
   you do not.
-- ❌ **Do not trust the connector to tell you.** Two of the four failing cables were
+-  **Do not trust the connector to tell you.** Two of the four failing cables were
   USB-C on both ends, in a Thunderbolt 4 port, on a phone advertising 10 Gb/s.
   Every visible part of that chain looked right.
 
@@ -572,7 +568,7 @@ that a receptacle could be held constant while only the cable changed. The measu
   351.1 Mbps single 32 MB transfer — none of them reachable on a USB 2.0 bus.
 - **5000 and 10000 Mbps of bus measured the same** — 370.695 against 361.330 — so
   once the ceiling clears the traffic, more ceiling buys nothing.
-- **Four cables and three ports produced an apparent 73 → 130 Mbps improvement that
+- **Four cables and three ports produced an apparent 73  130 Mbps improvement that
   was entirely the carrier recovering**, and zero USB errors throughout said so.
 
 Scope: one host, two handsets on AT&T, one physical location, measured 2026-09-05
@@ -590,3 +586,5 @@ conditions across passes cannot be read directly and are inferred from RTT.
 
 The strategy for using a fixed rubric for USB tethering diagnosis was validated with
 an incremental step by step approach.
+
+Any opinions in this article are those of the individual author and may not reflect the opinions of AWS.

@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
+  <title>The Cable Buys Headroom: 91% of a USB 2.0 Bus, 3.6% of a Thunderbolt One</title>
+  <meta name="description" content="The best USB 2.0 pass in 45 tethering records used 91% of what that bus can usably carry. The same link on a SuperSpeed cable uses 3.6%. USB speed is autonegotiated between host, cable and device, the slowest one wins, and nothing anywhere tells you the cable capped you." />
+  <style>
+    /* Default styles provided by pandoc.
+    ** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+    */
+    html {
+      color: #1a1a1a;
+      background-color: #fdfdfd;
+    }
+    body {
+      margin: 0 auto;
+      max-width: 36em;
+      padding-left: 50px;
+      padding-right: 50px;
+      padding-top: 50px;
+      padding-bottom: 50px;
+      hyphens: auto;
+      overflow-wrap: break-word;
+      text-rendering: optimizeLegibility;
+      font-kerning: normal;
+    }
+    @media (max-width: 600px) {
+      body {
+        font-size: 0.9em;
+        padding: 12px;
+      }
+      h1 {
+        font-size: 1.8em;
+      }
+    }
+    @media print {
+      html {
+        background-color: white;
+      }
+      body {
+        background-color: transparent;
+        color: black;
+        font-size: 12pt;
+      }
+      p, h2, h3 {
+        orphans: 3;
+        widows: 3;
+      }
+      h2, h3, h4 {
+        page-break-after: avoid;
+      }
+    }
+    p {
+      margin: 1em 0;
+    }
+    a {
+      color: #1a1a1a;
+    }
+    a:visited {
+      color: #1a1a1a;
+    }
+    img {
+      max-width: 100%;
+    }
+    svg {
+      height: auto;
+      max-width: 100%;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 1.4em;
+    }
+    h5, h6 {
+      font-size: 1em;
+      font-style: italic;
+    }
+    h6 {
+      font-weight: normal;
+    }
+    ol, ul {
+      padding-left: 1.7em;
+      margin-top: 1em;
+    }
+    li > ol, li > ul {
+      margin-top: 0;
+    }
+    blockquote {
+      margin: 1em 0 1em 1.7em;
+      padding-left: 1em;
+      border-left: 2px solid #e6e6e6;
+      color: #606060;
+    }
+    code {
+      font-family: Menlo, Monaco, Consolas, 'Lucida Console', monospace;
+      font-size: 85%;
+      margin: 0;
+      hyphens: manual;
+    }
+    pre {
+      margin: 1em 0;
+      overflow: auto;
+    }
+    pre code {
+      padding: 0;
+      overflow: visible;
+      overflow-wrap: normal;
+    }
+    .sourceCode {
+     background-color: transparent;
+     overflow: visible;
+    }
+    hr {
+      border: none;
+      border-top: 1px solid #1a1a1a;
+      height: 1px;
+      margin: 1em 0;
+    }
+    table {
+      margin: 1em 0;
+      border-collapse: collapse;
+      width: 100%;
+      overflow-x: auto;
+      display: block;
+      font-variant-numeric: lining-nums tabular-nums;
+    }
+    table caption {
+      margin-bottom: 0.75em;
+    }
+    tbody {
+      margin-top: 0.5em;
+      border-top: 1px solid #1a1a1a;
+      border-bottom: 1px solid #1a1a1a;
+    }
+    th {
+      border-top: 1px solid #1a1a1a;
+      padding: 0.25em 0.5em 0.25em 0.5em;
+    }
+    td {
+      padding: 0.125em 0.5em 0.25em 0.5em;
+    }
+    header {
+      margin-bottom: 4em;
+      text-align: center;
+    }
+    #TOC li {
+      list-style: none;
+    }
+    #TOC ul {
+      padding-left: 1.3em;
+    }
+    #TOC > ul {
+      padding-left: 0;
+    }
+    #TOC a:not(:hover) {
+      text-decoration: none;
+    }
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    div.columns{display: flex; gap: min(4vw, 1.5em);}
+    div.column{flex: auto; overflow-x: auto;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    /* The extra [class] is a hack that increases specificity enough to
+       override a similar rule in reveal.js */
+    ul.task-list[class]{list-style: none;}
+    ul.task-list li input[type="checkbox"] {
+      font-size: inherit;
+      width: 0.8em;
+      margin: 0 0.8em 0.2em -1.6em;
+      vertical-align: middle;
+    }
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
+    /* CSS for syntax highlighting */
+    html { -webkit-text-size-adjust: 100%; }
+    pre > code.sourceCode { white-space: pre; position: relative; }
+    pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+    pre > code.sourceCode > span:empty { height: 1.2em; }
+    .sourceCode { overflow: visible; }
+    code.sourceCode > span { color: inherit; text-decoration: inherit; }
+    div.sourceCode { margin: 1em 0; }
+    pre.sourceCode { margin: 0; }
+    @media screen {
+    div.sourceCode { overflow: auto; }
+    }
+    @media print {
+    pre > code.sourceCode { white-space: pre-wrap; }
+    pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+    }
+    pre.numberSource code
+      { counter-reset: source-line 0; }
+    pre.numberSource code > span
+      { position: relative; left: -4em; counter-increment: source-line; }
+    pre.numberSource code > span > a:first-child::before
+      { content: counter(source-line);
+        position: relative; left: -1em; text-align: right; vertical-align: baseline;
+        border: none; display: inline-block;
+        -webkit-touch-callout: none; -webkit-user-select: none;
+        -khtml-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        padding: 0 4px; width: 4em;
+        color: #aaaaaa;
+      }
+    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
+    div.sourceCode
+      {   }
+    @media screen {
+    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+    }
+    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
+    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
+    code span.at { color: #7d9029; } /* Attribute */
+    code span.bn { color: #40a070; } /* BaseN */
+    code span.bu { color: #008000; } /* BuiltIn */
+    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
+    code span.ch { color: #4070a0; } /* Char */
+    code span.cn { color: #880000; } /* Constant */
+    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
+    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
+    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
+    code span.dt { color: #902000; } /* DataType */
+    code span.dv { color: #40a070; } /* DecVal */
+    code span.er { color: #ff0000; font-weight: bold; } /* Error */
+    code span.ex { } /* Extension */
+    code span.fl { color: #40a070; } /* Float */
+    code span.fu { color: #06287e; } /* Function */
+    code span.im { color: #008000; font-weight: bold; } /* Import */
+    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
+    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
+    code span.op { color: #666666; } /* Operator */
+    code span.ot { color: #007020; } /* Other */
+    code span.pp { color: #bc7a00; } /* Preprocessor */
+    code span.sc { color: #4070a0; } /* SpecialChar */
+    code span.ss { color: #bb6688; } /* SpecialString */
+    code span.st { color: #4070a0; } /* String */
+    code span.va { color: #19177c; } /* Variable */
+    code span.vs { color: #4070a0; } /* VerbatimString */
+    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
+  </style>
+  <style>
+    body{font-family:-apple-system,'Segoe UI',Roboto,'Liberation Sans',Arial,sans-serif;
+         font-size:18px;line-height:1.58;max-width:42em;color:#242424;}
+    h1,h2,h3,h4{font-weight:700;line-height:1.25;margin-top:1.8em;}
+    h4{font-size:1.25em;}
+    img{max-width:100%;height:auto;display:block;margin:1.6em 0;}
+    pre{background:#f7f7f7;border:1px solid #e6e6e6;border-radius:4px;
+        padding:12px 14px;overflow-x:auto;font-size:14px;line-height:1.45;}
+    code{font-family:'Liberation Mono',Menlo,Consolas,monospace;}
+    :not(pre)>code{background:#f2f2f2;padding:1px 5px;border-radius:3px;font-size:.9em;}
+    blockquote{border-left:3px solid #ddd;margin-left:0;padding-left:1em;color:#555;}
+    hr{border:0;border-top:1px solid #e6e6e6;margin:2.4em 0;}
+  </style>
+</head>
+<body>
+<figure><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cover.567bed21.jpg" alt="The Cable Buys Headroom: 91% of a USB 2.0 Bus, 3.6% of a Thunderbolt One" /></figure>
+<header id="title-block-header" hidden>
+<h1 class="title">The Cable Buys Headroom: 91% of a USB 2.0 Bus, 3.6% of
+a Thunderbolt One</h1>
+</header>
+<p>This article walks through diagnosing a USB tether that would not
+negotiate above USB 2.0 speed, on a phone that advertises 10 Gb/s. The
+hunt took four cables and three physical ports across two days.</p>
+<p><strong>USB link speed is autonegotiated between the host, the cable
+and the device, and the result is the slowest mode all three can
+manage.</strong> The cable is a full participant in that negotiation, a
+USB 2.0 cable has no way to vote for anything above 480 Mbps, and
+<strong>nothing anywhere reports that it happened.</strong> The tether
+comes up, DHCP works, traffic flows, and the link is capped at a fifth
+of what both ends were offering.</p>
+<p>What the right cable buys is not speed. It is
+<strong>headroom</strong>, and the difference is not subtle: the best
+USB 2.0 pass in this log used <strong>91% of what that bus can usably
+carry</strong>, while the same link on a SuperSpeed cable uses
+<strong>3.6%</strong>.</p>
+<p>Every command below is one you can run against your own tether, and
+every number comes from a record in the repository:</p>
+<p><a
+href="https://github.com/xbill9/tether">https://github.com/xbill9/tether</a></p>
+<h4 id="the-symptom">The Symptom</h4>
+<p>The repository holds 45 measurement records across 14 handsets from
+four vendors, each one a full pass — three sequential single-stream
+transfers, a four-stream parallel test, and a ping — against a fixed
+endpoint and a fixed 8 MB transfer size.</p>
+<p><strong>41 of those 45 records enumerated at 480 Mbps.</strong>
+Fourteen handsets, three drivers, two carriers, three physical
+receptacles, and for two days not one USB 3.0 negotiation anywhere.</p>
+<p>The most conspicuous offender was an iPhone 17 Pro, whose BOS
+descriptor is not shy about what it can do:</p>
+<pre class="plaintext"><code>bcdUSB               2.10
+SuperSpeed USB Device Capability:
+  wSpeedsSupported   0x000e     -&gt; Full, High, SuperSpeed (5Gbps)
+SuperSpeedPlus USB Device Capability:
+  bmSublinkSpeedAttr[0]  10Gb/s Symmetric RX SuperSpeedPlus
+  bmSublinkSpeedAttr[1]  10Gb/s Symmetric TX SuperSpeedPlus</code></pre>
+<p>A device declaring 10 Gb/s, enumerating at 480 Mbps. That is a factor
+of about twenty-one, and it is the kind of gap that makes you stop
+measuring throughput and start reading <code>sysfs</code>.</p>
+<h4
+id="the-bus-rate-is-negotiated-and-every-link-in-the-chain-votes">The
+Bus Rate Is Negotiated, and Every Link in the Chain Votes</h4>
+<p>USB link speed is not a property of the phone, and it is not a
+property of the laptop. It is negotiated at every attach between three
+parties — host controller, cable, device — and <strong>the trained rate
+is the fastest mode all three can do.</strong> One USB 2.0 component
+anywhere in that chain and the entire link comes up at 480 Mbps.</p>
+<p>The cable is a real participant in that vote, not a passive wire.
+SuperSpeed rides on two extra differential pairs that a USB 2.0 cable
+does not physically contain — it carries <code>D+</code>/<code>D-</code>
+and nothing else. Put one between a 10 Gb/s phone and a 10 Gb/s port and
+the two ends will negotiate down to High Speed and work perfectly.</p>
+<p><strong>And nothing tells you.</strong> No error, no
+<code>dmesg</code> warning, no degraded-mode indicator, no line anywhere
+saying a cable capped you. The only evidence is a number in
+<code>sysfs</code> that you have to go and read, next to a second number
+saying what the device had offered:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-1.png" alt="table" /></p>
+<p><strong>The gap between those two numbers is the cable's
+vote.</strong> Steps 1 and 2 below are those two readings, and
+everything after them is narrowing down which participant cast the low
+one.</p>
+<h4 id="at-this-point-you-should-have">At This Point You Should
+Have</h4>
+<ul>
+<li>A phone tethered over USB and holding the default route — check this
+first, or you will measure Wi-Fi</li>
+<li><code>lsusb</code> from <code>usbutils</code>, and <code>ip</code>
+from <code>iproute2</code></li>
+<li>Read access to <code>/sys/bus/usb/devices</code> and
+<code>/sys/class/net</code>, which needs no root</li>
+<li>Every other route-capable interface <strong>down</strong>. If Wi-Fi
+is up, <code>curl</code> will succeed over it and the result will look
+like a tethering measurement</li>
+</ul>
+<p>None of the diagnosis below transfers a single byte over the cellular
+link. That matters here: a full measurement pass in this repository
+costs roughly 56 MB of metered data, and everything in Steps 1 through 4
+is free.</p>
+<h4 id="step-1--read-the-bus-speed-first">Step 1 — Read the Bus Speed
+First</h4>
+<p>This is the one reading that invalidates everything downstream if you
+skip it. A charge-only or USB 2.0 cable silently caps the bus at 480
+Mbps and nothing anywhere reports an error.</p>
+<div class="sourceCode" id="cb2"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># find the tether interface and its USB device</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> /sys/class/net/<span class="pp">*</span>/device/driver<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">ifn</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">dirname</span> <span class="va">$(</span><span class="fu">dirname</span> <span class="va">$i)))</span></span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="va">drv</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> <span class="va">$i))</span></span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">case</span> <span class="va">$drv</span> <span class="kw">in</span> <span class="ss">cdc_ncm</span><span class="kw">|</span><span class="ss">rndis_host</span><span class="kw">|</span><span class="ss">ipheth</span><span class="kw">)</span> <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$ifn</span><span class="st">  </span><span class="va">$drv</span><span class="st">&quot;</span><span class="cf">;;</span> <span class="cf">esac</span></span>
+<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
+<pre class="plaintext"><code>enxb65575abcda3  ipheth</code></pre>
+<p>Then walk from the interface back to the USB device and read its
+trained speed:</p>
+<div class="sourceCode" id="cb4"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">dev</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> /sys/class/net/enxb65575abcda3/device/..<span class="va">))</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> /sys/bus/usb/devices/<span class="va">$dev</span>/speed</span></code></pre></div>
+<pre class="plaintext"><code>480</code></pre>
+<p><code>480</code> is USB 2.0, <code>5000</code> is USB 3.0 Gen 1,
+<code>10000</code> is Gen 2. Alongside it,
+<code>/sys/class/net/&lt;if&gt;/speed</code> gives the negotiated link
+rate — though note that <code>ipheth</code> returns <code>EINVAL</code>
+there and reports nothing, so on an iPhone this field stays blank in
+every record.</p>
+<h4 id="step-2--ask-the-device-what-it-is-capable-of">Step 2 — Ask the
+Device What It Is Capable Of</h4>
+<p>A 480 reading only means something once you know what the device
+brought to the negotiation.</p>
+<div class="sourceCode" id="cb6"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">lsusb</span> <span class="at">-v</span> <span class="at">-d</span> 05ac:12a8 <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-A3</span> <span class="st">&quot;SuperSpeed&quot;</span></span></code></pre></div>
+<p>The descriptor block at the top of this article is that output.
+<strong>The device capability is the control.</strong> Compare the
+iPhone 16e measured eight minutes before the fastest pass in this log:
+it advertises no SuperSpeed capability at all, so its 480 is its own
+ceiling and no cable on earth will move it.</p>
+<p>That single distinction separates "something in the chain voted 480"
+from "the phone itself voted 480", and it is free to read. Where the
+device offers SuperSpeed and the link trained at High Speed, one of the
+other two participants is responsible — and there are only two of
+them.</p>
+<h4 id="step-3--find-every-port-not-just-the-pretty-ones">Step 3 — Find
+Every Port, Not Just the Pretty Ones</h4>
+<p>This step exists because the investigation got it wrong, in print,
+twice.</p>
+<p>The obvious move on a modern laptop is to enumerate the Type-C
+connectors, since the kernel binds each one to its USB ports at
+boot:</p>
+<div class="sourceCode" id="cb7"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dmesg</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;typec port&quot;</span></span></code></pre></div>
+<pre class="plaintext"><code>typec port0: bound usb3-port1 (ops connector_ops [usbcore])
+typec port0: bound usb4-port1 (ops connector_ops [usbcore])
+typec port1: bound usb3-port2 (ops connector_ops [usbcore])
+typec port1: bound usb2-port1 (ops connector_ops [usbcore])</code></pre>
+<p>Read against <code>lspci</code>, that is a complete map of the
+machine's USB-C:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-2.png" alt="table" /></p>
+<p>That table is correct. The conclusion drawn from it — <em>"there is
+no untried port on this machine"</em> — was wrong, and it cost about an
+hour.</p>
+<p><strong><code>/sys/class/typec</code> enumerates Type-C connectors
+only.</strong> A Type-A receptacle has no Power Delivery and therefore
+no connector object, so it cannot appear there. The machine had a third
+external receptacle the map could not see.</p>
+<p>Take the port inventory from the hotplug entries in the port list
+instead:</p>
+<div class="sourceCode" id="cb9"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> /sys/bus/usb/devices/usb<span class="pp">*</span>/<span class="pp">*</span>/usb<span class="pp">*</span>-port<span class="pp">*</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">[</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">cat</span> <span class="va">$p</span>/connect_type <span class="dv">2</span><span class="op">&gt;</span>/dev/null<span class="va">)</span><span class="st">&quot;</span> <span class="ot">=</span> <span class="st">&quot;hotplug&quot;</span> <span class="bu">]</span> <span class="kw">||</span> <span class="cf">continue</span></span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">peer</span><span class="op">=</span><span class="st">&quot;-&quot;</span><span class="kw">;</span> <span class="bu">[</span> <span class="ot">-L</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">/peer&quot;</span> <span class="bu">]</span> <span class="kw">&amp;&amp;</span> <span class="va">peer</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">/peer&quot;</span><span class="va">)</span><span class="st">&quot;</span><span class="va">)</span></span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$p)</span><span class="st">  peer=</span><span class="va">$peer</span><span class="st">  location=</span><span class="va">$(</span><span class="fu">cat</span> <span class="va">$p</span>/location<span class="va">)</span><span class="st">&quot;</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span> <span class="kw">|</span> <span class="fu">sort</span></span></code></pre></div>
+<pre class="plaintext"><code>usb3-port3  peer=usb4-port2  location=0x80000301
+usb4-port2  peer=usb3-port3  location=0x80000301</code></pre>
+<p><code>usb3-port3</code> is the USB-A receptacle. Its
+<code>peer</code> is a 10 Gb/s port on another hub, and the shared
+<code>location</code> is the kernel saying <em>these two entries are two
+halves of one physical hole in the side of the laptop</em>.</p>
+<p><strong>That peer relationship is the single most useful line in this
+whole investigation</strong>, for a reason that only becomes clear in a
+moment.</p>
+<h4 id="step-4--ask-the-cable-directly-and-watch-it-refuse">Step 4 — Ask
+the Cable Directly, and Watch It Refuse</h4>
+<p>An electronically marked USB-C cable declares its own data capability
+over Power Delivery, and Linux exposes that as a
+<code>portN-cable</code> device with an <code>identity/</code> directory
+of PD VDOs. The USB-C specification <strong>requires</strong> an
+e-marker on a passive cable supporting more than USB 2.0, and does not
+require one on a USB 2.0 cable. So a missing e-marker would be real
+evidence.</p>
+<div class="sourceCode" id="cb11"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> /sys/class/typec/</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> /sys/class/typec/port0-partner/usb_power_delivery_revision</span></code></pre></div>
+<pre class="plaintext"><code>port0  port0-partner  port1  usb_power_delivery_revision
+0.0</code></pre>
+<p><strong>There is no cable node, and that is not evidence about the
+cable.</strong> The stack is not surfacing VDO data at all: the
+connected partner — the phone itself — has an empty
+<code>identity/</code> directory and reports PD revision
+<code>0.0</code>. A stack that will not show the phone's PD identity was
+never going to show the cable's.</p>
+<p>Worth knowing precisely because it looks like it should work. On a
+host that does report cable identity this is the whole answer in one
+<code>cat</code>. Here it is silence, not a finding, and treating it as
+a finding would have convicted the cable on no evidence.</p>
+<h4 id="the-hunt">The Hunt</h4>
+<p>With the cable unreadable, the only remaining instrument is
+substitution. Four cables, three receptacles, over one afternoon:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-3.png" alt="table" /></p>
+<p>Zero USB errors and zero drops in every pass. The host has two
+SuperSpeed root hubs, both enumerated, both idle, and neither had ever
+seen a device.</p>
+<p><strong>The tempting reading is that four negatives is mounting
+evidence against the host. It is not.</strong> None of those four cables
+was <em>known</em> to carry SuperSpeed pairs. Unmarked C-to-C cables —
+the kind that ship in the box with a phone or a charger — are
+overwhelmingly USB 2.0 by construction. Four of them all being USB 2.0
+is not a coincidence in need of explanation; it is the expected
+outcome.</p>
+<p>Four unknowns is close to one result repeated, not four independent
+tests.</p>
+<h4 id="the-trap-in-the-middle">The Trap in the Middle</h4>
+<p>Here is the part of the investigation most worth stealing, because it
+has nothing to do with USB.</p>
+<p>Throughput was measured on every one of those passes, and it moved a
+great deal:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-4.png" alt="table" /></p>
+<p>Aggregate climbed 73 → 85 → 101 → 130 across four consecutive cable
+swaps. Every new cable looked better than the one before it.</p>
+<p><strong>None of that is a cable effect.</strong> The carrier was
+recovering from a dip across the afternoon, and each swap happened to
+coincide with a step of that recovery. Time is the variable that moved;
+the cable is the one that did not. The USB errors were zero throughout,
+and a cable degrading throughput by 60% would show up in those
+counters.</p>
+<p>Two rules came out of this and both are now in the repository's
+methodology:</p>
+<ol type="1">
+<li><strong>Record three single-stream runs, never one.</strong> One
+phone in this log produced 15, 44 and 116 Mbps on three consecutive
+identical transfers. Any single number is a lie about the link.</li>
+<li><strong>A/B a hardware change against time, not against the previous
+hour.</strong> If you cannot interleave, do not attribute.</li>
+</ol>
+<h4 id="the-cable-that-worked">The Cable That Worked</h4>
+<p>The next day, a new USB-A to USB-C cable — around $15, bought
+specifically to be a <em>known</em> SuperSpeed cable rather than another
+unknown.</p>
+<pre class="plaintext"><code>480  -&gt;  5000</code></pre>
+<p>The iPhone trained SuperSpeed and moved to a different hub in
+<code>sysfs</code>, appearing at <code>4-2</code> rather than the
+<code>3-x</code> of every previous pass. That looks like a port change
+and it is not:</p>
+<pre class="plaintext"><code>usb4-port2  peer=usb3-port3  location=0x80000301</code></pre>
+<p><code>4-2</code> is <code>usb4-port2</code>, whose peer is
+<code>usb3-port3</code> — the same USB-A receptacle tested at 480 the
+day before, same location code. <strong>The device moved hubs only
+because it started training SuperSpeed, which is exactly what a
+successful 5 Gb/s negotiation looks like on this host.</strong> The
+receptacle is a control here. The cable is the only variable that
+moved.</p>
+<p>A Pixel 9a on the same new cable, same receptacle, same DHCP lease,
+confirmed it from the other side:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-5.png" alt="table" /></p>
+<p>Two handsets, one cable swap, and the question that had eaten an
+afternoon was answered. The unmarked cables were USB 2.0 cables. ✅</p>
+<h4 id="what-the-cable-unlocked-headroom">What the Cable Unlocked:
+Headroom</h4>
+<p>The bus reading is the headline. <strong>Headroom is what it actually
+buys</strong>, and it is the number that says whether any of this was
+worth $15.</p>
+<p>The repository's diagnostic constant for the realistic bulk
+throughput of a 480 Mbps USB 2.0 bus, after protocol overhead, is
+<strong>300 Mbps</strong>. Measure every pass in the log as a share of
+the bus it ran on and the picture is stark:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-6.png" alt="table" /></p>
+<p><strong>91% against 3.6% is the whole argument</strong>, and the two
+denominators are worth naming so the comparison is read correctly. The
+91% is 273 Mbps against the <strong>usable</strong> 300 Mbps of a 480
+Mbps bus; the 3.6% is 361.330 against the <strong>raw</strong> 10000,
+because this repository has no measured usable ceiling for a SuperSpeed
+bus and inventing one would be worse than the mismatch. Compared raw to
+raw it is <strong>56.9% against 3.6%</strong> — a factor of sixteen
+rather than twenty-five, and the same conclusion either way.</p>
+<p><em>Share of the bus is arithmetic throughout — each record's
+4-stream aggregate over its own <code>bus_speed_mbps</code>, so 273/480
+= 56.9% and 365.185/5000 = 7.3%. The 91% figure is 273 against the 300
+Mbps usable ceiling rather than the raw 480.</em></p>
+<p><strong>On USB 2.0 the best pass in 45 records was at 91% of what the
+bus can usably carry.</strong> There was nothing left. Every good pass
+in the 480 era was pressed up against a ceiling, and the ones that were
+not were being held down by the carrier instead.</p>
+<p><strong>On SuperSpeed the same link uses about 7% of the
+bus.</strong> The cable did not make anything faster by itself; it moved
+the ceiling from <em>just above the traffic</em> to <em>fourteen times
+above the traffic</em>, so the tether is now free to take whatever the
+radio gives it on any given evening — and this link swings by more than
+4x on its own within minutes.</p>
+<p>Four of those measurements also clear the 300 Mbps line outright:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-7.png" alt="table" /></p>
+<p><strong>Those numbers were not reachable on a USB 2.0 bus.</strong>
+Not "would have been slower" — not reachable. Every one of them needed a
+cable that could vote for SuperSpeed. ✅</p>
+<h4 id="why-the-aggregate-is-the-test">Why the Aggregate Is the
+Test</h4>
+<p>The four-stream number is doing the work in both tables above, and it
+is worth saying why rather than treating it as a second opinion on the
+single-stream figure.</p>
+<p><strong>Single-stream against four-stream aggregate is the one
+comparison that separates "the carrier is slow" from "something on this
+machine is collapsing."</strong> If four flows together go much faster
+than one, the wide-area path has headroom and the problem is local. If
+they do not, there is no headroom to find.</p>
+<p>The Anker cable's BBR pass is a clean worked example. Single-stream
+ran 134.930 / 113.576 / 123.229 Mbps — a 1.19x spread — against a
+four-stream aggregate of <strong>365.185 Mbps, 2.95x the single-stream
+mean.</strong></p>
+<p>Read those two numbers together and the link describes itself. Four
+flows found nearly three times what one flow did, so the wide-area path
+plainly had that much to give and nothing local was collapsing: a 1.19x
+spread with zero errors and zero drops leaves no radio loss for
+congestion control to misread. <strong>The ceiling in that reading is
+not on this machine</strong>, which is exactly the state you want to be
+in — the tether is out of the way and the only thing left is the
+radio.</p>
+<p>The reverse reading is the one that catches people. Where the
+aggregate lands on top of the single-stream figure, four flows found
+nothing extra, and no amount of tuning on the host will produce headroom
+that is not there.</p>
+<p>Read the aggregate before you attribute anything to hardware. It is
+the reading that tells you whether the answer is even on your side of
+the link.</p>
+<h4 id="what-the-link-reached">What the Link Reached</h4>
+<p>Once the bus was out of the way, three passes on this handset across
+two evenings, on two cables and two host controllers:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-8.png" alt="table" /></p>
+<p><strong>Three aggregates within 3% of each other — 361.330, 370.695
+and 365.185 — across two different cables, two host controllers, two
+congestion control algorithms and a bus that differs by 2x.</strong>
+None of those variables moved the number. The link settles around 365
+Mbps and the hardware underneath it has stopped mattering, which is what
+having headroom looks like.</p>
+<p>The RTT came with it: 27.268 ms average with <code>mdev</code> of
+<strong>2.272 ms</strong> on the Thunderbolt pass, the flattest jitter
+anywhere in the log.</p>
+<p>The BBR column is worth its place for a second reason. Every early
+SuperSpeed pass ran <code>cubic</code> where the 480-era records ran
+<code>bbr</code>, so bus and congestion control had moved together and
+neither could be credited. Matched on the same port and bus, BBR gives
+365.185 against CUBIC's 370.695 — within a few percent, with
+<code>mdev</code> slightly lower. <strong>The bus is what these figures
+rest on.</strong></p>
+<h4 id="buy-headroom-once-and-stop">Buy Headroom Once, and Stop</h4>
+<p>Note the third column of that table: moving from the Thunderbolt port
+back to a plain USB-C receptacle <strong>halved the bus and cost
+nothing</strong> — 370.695 Mbps against 361.330. At 361 Mbps the phone
+is using about 3.6% of a 10000 Mbps bus, by arithmetic, against 7.4% of
+a 5000 Mbps one. Both are miles of headroom. Doubling an already-idle
+ceiling buys exactly nothing, and Gen 2 is not worth chasing on a
+tether.</p>
+<p>So the rule is narrow and cheap:</p>
+<ul>
+<li>✅ <strong>One known-good cable, then stop.</strong> Four unmarked
+cables cast four identical 480 votes. One rated cable produced 5000 on
+two different handsets, on the same receptacle, with nothing else
+changed.</li>
+<li>✅ <strong>Read the bus before you tune anything.</strong>
+<code>cat /sys/bus/usb/devices/&lt;dev&gt;/speed</code> is free, and a
+480 reading on a SuperSpeed-capable phone caps you at roughly 300 Mbps
+of real throughput no matter what else you fix.</li>
+<li>✅ <strong>Do not buy ceiling you cannot reach.</strong> 5000 and
+10000 measured the same on this link, repeatedly. Headroom is binary in
+practice: you either have enough or you do not.</li>
+<li>❌ <strong>Do not trust the connector to tell you.</strong> Two of
+the four failing cables were USB-C on both ends, in a Thunderbolt 4
+port, on a phone advertising 10 Gb/s. Every visible part of that chain
+looked right.</li>
+</ul>
+<p><strong>One limit on all of this, and it is being closed by
+measurement rather than argument.</strong> The 300 Mbps figure is the
+repository's diagnostic constant, so the claim above is a bound argument
+rather than a controlled A/B — no pass has yet put the fast link back
+onto a USB 2.0 cable to measure what it would cost. That controlled
+re-test is queued, and it is the number this article most wants.</p>
+<h4 id="one-more-trap-the-transfer-size">One More Trap: the Transfer
+Size</h4>
+<p>While measuring the fast link, the single-stream figure sat near 140
+Mbps against a four-stream aggregate of 361 — the classic shape of
+per-flow carrier shaping, and that is what it was written up as.</p>
+<p>It was wrong, and the correction is worth the paragraph.</p>
+<p>A single <strong>32 MB</strong> transfer on the same connection ran
+332.3 Mbps — essentially the whole four-stream aggregate, from one flow.
+So the gap was about the fixed 8 MB transfer size, not the link. Except
+the first attempt to prove that was also uncontrolled: a fitted model
+predicted 267 Mbps at 20 MB and the measurement came back at
+<strong>73.0 Mbps</strong>, because this link can collapse by 4.8x on
+its own between one transfer and the next.</p>
+<p>The design that settled it was six transfers alternating 8 and 32 MB,
+<strong>the whole run spanning 3.89 seconds</strong> so that link
+variation could not fall differently on the two sizes:</p>
+<p><img src="https://raw.githubusercontent.com/xbill9/tether/main/articles/cable-ceiling/medium/img/devto-cable-ceiling-table-9.png" alt="table" /></p>
+<p>8 MB mean <strong>158.75</strong> Mbps, 32 MB mean
+<strong>361.96</strong> Mbps, a ratio of <strong>2.28x</strong>. Every
+32 MB run beat the 8 MB run beside it, and the two sets do not overlap
+at all — the fastest 8 MB run, 176.9, is below the slowest 32 MB run,
+354.6.</p>
+<p>The mechanism is still open. A fixed-cost fit to those durations
+gives an asymptote of 637 Mbps and a startup cost of <strong>0.305
+s</strong>, which is about <strong>10 round trips</strong> at this
+link's 29.6 ms, where slow-start to the ~503 KB bandwidth-delay product
+should need roughly 6. Something beyond textbook slow-start is in there,
+and six transfers cannot say what.</p>
+<p><strong>Same failure mode as the cable, one layer up.</strong> A
+measurement instrument was producing a number that described the
+instrument rather than the link, and the only way out was interleaving
+the two conditions inside a window too short for anything else to
+change.</p>
+<h4 id="cheat-sheet">Cheat Sheet</h4>
+<p>Both of these are in the repository and run directly, no arguments
+needed:</p>
+<div class="sourceCode" id="cb15"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bin/tether-bus-check</span>      <span class="co"># everything below, plus a verdict. No cellular data</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ex">bin/tether-report</span>         <span class="co"># the full diagnostic rubric. No cellular data</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="ex">bin/tether-report</span> <span class="at">--measure</span>   <span class="co"># the standard pass. ~56 MB of metered data</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="ex">bin/tether-interleave</span>     <span class="co"># A/B two transfer sizes against a moving link</span></span></code></pre></div>
+<p><code>tether-bus-check</code> reads both sides of the negotiation and
+says which participant cast the low vote. <code>tether-interleave</code>
+is the design from the section above — alternating sizes back to back so
+link drift falls on both equally — and it prints the cost before it
+spends it.</p>
+<p>The individual readings, if you would rather run them by hand:</p>
+<div class="sourceCode" id="cb16"><pre
+class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. which interface is the tether, and what driver</span></span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> /sys/class/net/<span class="pp">*</span>/device/driver<span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">ifn</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">dirname</span> <span class="va">$(</span><span class="fu">dirname</span> <span class="va">$i)))</span></span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">case</span> <span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> <span class="va">$i))</span> <span class="kw">in</span></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="ss">cdc_ncm</span><span class="kw">|</span><span class="ss">rndis_host</span><span class="kw">|</span><span class="ss">ipheth</span><span class="kw">)</span> <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$ifn</span><span class="st"> </span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> <span class="va">$i))</span><span class="st">&quot;</span><span class="cf">;;</span> <span class="cf">esac</span></span>
+<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
+<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. is it holding the default route (or are you about to measure Wi-Fi)</span></span>
+<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="ex">ip</span> route show default</span>
+<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. THE READING THAT MATTERS - 480 / 5000 / 10000</span></span>
+<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="va">dev</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> /sys/class/net/<span class="op">&lt;</span>if<span class="op">&gt;</span>/device/..<span class="va">))</span></span>
+<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> /sys/bus/usb/devices/<span class="va">$dev</span>/speed</span>
+<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. could the device do better? if no SuperSpeed capability, stop here</span></span>
+<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="ex">lsusb</span> <span class="at">-v</span> <span class="at">-d</span> <span class="op">&lt;</span>vid<span class="op">&gt;</span>:<span class="op">&lt;</span>pid<span class="op">&gt;</span> 2<span class="op">&gt;</span>/dev/null <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-A3</span> SuperSpeed</span>
+<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. every external port, including the ones /sys/class/typec cannot see</span></span>
+<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> /sys/bus/usb/devices/usb<span class="pp">*</span>/<span class="pp">*</span>/usb<span class="pp">*</span>-port<span class="pp">*</span><span class="kw">;</span> <span class="cf">do</span></span>
+<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>  <span class="bu">[</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">cat</span> <span class="va">$p</span>/connect_type <span class="dv">2</span><span class="op">&gt;</span>/dev/null<span class="va">)</span><span class="st">&quot;</span> <span class="ot">=</span> hotplug <span class="bu">]</span> <span class="kw">||</span> <span class="cf">continue</span></span>
+<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>  <span class="va">peer</span><span class="op">=</span><span class="st">&quot;-&quot;</span><span class="kw">;</span> <span class="bu">[</span> <span class="ot">-L</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">/peer&quot;</span> <span class="bu">]</span> <span class="kw">&amp;&amp;</span> <span class="va">peer</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">/peer&quot;</span><span class="va">)</span><span class="st">&quot;</span><span class="va">)</span></span>
+<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$p)</span><span class="st"> peer=</span><span class="va">$peer</span><span class="st"> location=</span><span class="va">$(</span><span class="fu">cat</span> <span class="va">$p</span>/location<span class="va">)</span><span class="st">&quot;</span></span>
+<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span> <span class="kw">|</span> <span class="fu">sort</span></span>
+<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. errors and drops - non-zero points at cable or power, not config</span></span>
+<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a><span class="ex">ip</span> <span class="at">-s</span> link show <span class="op">&lt;</span>if<span class="op">&gt;</span></span></code></pre></div>
+<p>Steps 1 through 6 cost no cellular data. Only run a transfer once
+they have told you what you are looking at.</p>
+<h4 id="summary">Summary</h4>
+<p>The goal of this article was to find out why a phone advertising 10
+Gb/s would not negotiate above USB 2.0 speed on any cable or port, and
+what fixing it was worth. The key to the solution was treating the link
+rate as a three-way negotiation and reading both sides of it — what the
+link agreed on against what the device offered — then reading the port
+peer map rather than the Type-C connector list, so that a receptacle
+could be held constant while only the cable changed. The measured
+results were:</p>
+<ul>
+<li><strong>A $15 cable took the bus from 480 to 5000 Mbps</strong> on
+two handsets, on the same physical receptacle, confirming that four
+earlier unmarked cables voted 480.</li>
+<li><strong>The Pixel 9a's negotiated link went 425 to 3750
+Mbps</strong>, 8.8x, with the receptacle and the DHCP lease held
+constant.</li>
+<li><strong>Headroom went from 91% consumed to about 7%
+consumed.</strong> The best USB 2.0 pass in 45 records used 91% of what
+that bus can usably carry; the best SuperSpeed passes use 7.3% and 7.4%
+of theirs.</li>
+<li><strong>Four aggregates cleared 300 Mbps</strong> — 370.695, 365.185
+and 361.330, plus a 351.1 Mbps single 32 MB transfer — none of them
+reachable on a USB 2.0 bus.</li>
+<li><strong>5000 and 10000 Mbps of bus measured the same</strong> —
+370.695 against 361.330 — so once the ceiling clears the traffic, more
+ceiling buys nothing.</li>
+<li><strong>Four cables and three ports produced an apparent 73 → 130
+Mbps improvement that was entirely the carrier recovering</strong>, and
+zero USB errors throughout said so.</li>
+</ul>
+<p>Scope: one host, two handsets on AT&amp;T, one physical location,
+measured 2026-09-05 and 2026-09-06, against a fixed endpoint and a fixed
+8 MB transfer size across 45 records. The first SuperSpeed passes moved
+congestion control alongside the bus, running <code>cubic</code> where
+the 2026-09-05 records ran <code>bbr</code>; that confound has since
+been closed by matched BBR passes on 2026-09-08 — 365.185 Mbps aggregate
+against the CUBIC pass's 370.695 on the same port and bus — so the bus,
+not the congestion control, is what the SuperSpeed figures rest on. The
+300 Mbps USB 2.0 bulk ceiling is the repository's own diagnostic
+constant rather than a measurement on this host, so the claim that the
+fast figures were unreachable on the old cable is a bound argument; no
+control run has yet put the fast link back onto a USB 2.0 cable, and
+that re-test is queued. <code>carrier.network</code> is unobtainable on
+iOS, so carrier conditions across passes cannot be read directly and are
+inferred from RTT.</p>
+<p>The strategy for using a fixed rubric for USB tethering diagnosis was
+validated with an incremental step by step approach.</p>
+</body>
+</html>
