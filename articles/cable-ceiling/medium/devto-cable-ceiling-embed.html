@@ -167,70 +167,6 @@
       vertical-align: middle;
     }
     .display.math{display: block; text-align: center; margin: 0.5rem auto;}
-    /* CSS for syntax highlighting */
-    pre > code.sourceCode { white-space: pre; position: relative; }
-    pre > code.sourceCode > span { line-height: 1.25; }
-    pre > code.sourceCode > span:empty { height: 1.2em; }
-    .sourceCode { overflow: visible; }
-    code.sourceCode > span { color: inherit; text-decoration: inherit; }
-    div.sourceCode { margin: 1em 0; }
-    pre.sourceCode { margin: 0; }
-    @media screen {
-    div.sourceCode { overflow: auto; }
-    }
-    @media print {
-    pre > code.sourceCode { white-space: pre-wrap; }
-    pre > code.sourceCode > span { display: inline-block; text-indent: -5em; padding-left: 5em; }
-    }
-    pre.numberSource code
-      { counter-reset: source-line 0; }
-    pre.numberSource code > span
-      { position: relative; left: -4em; counter-increment: source-line; }
-    pre.numberSource code > span > a:first-child::before
-      { content: counter(source-line);
-        position: relative; left: -1em; text-align: right; vertical-align: baseline;
-        border: none; display: inline-block;
-        -webkit-touch-callout: none; -webkit-user-select: none;
-        -khtml-user-select: none; -moz-user-select: none;
-        -ms-user-select: none; user-select: none;
-        padding: 0 4px; width: 4em;
-        color: #aaaaaa;
-      }
-    pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa;  padding-left: 4px; }
-    div.sourceCode
-      {   }
-    @media screen {
-    pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
-    }
-    code span.al { color: #ff0000; font-weight: bold; } /* Alert */
-    code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } /* Annotation */
-    code span.at { color: #7d9029; } /* Attribute */
-    code span.bn { color: #40a070; } /* BaseN */
-    code span.bu { color: #008000; } /* BuiltIn */
-    code span.cf { color: #007020; font-weight: bold; } /* ControlFlow */
-    code span.ch { color: #4070a0; } /* Char */
-    code span.cn { color: #880000; } /* Constant */
-    code span.co { color: #60a0b0; font-style: italic; } /* Comment */
-    code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } /* CommentVar */
-    code span.do { color: #ba2121; font-style: italic; } /* Documentation */
-    code span.dt { color: #902000; } /* DataType */
-    code span.dv { color: #40a070; } /* DecVal */
-    code span.er { color: #ff0000; font-weight: bold; } /* Error */
-    code span.ex { } /* Extension */
-    code span.fl { color: #40a070; } /* Float */
-    code span.fu { color: #06287e; } /* Function */
-    code span.im { color: #008000; font-weight: bold; } /* Import */
-    code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } /* Information */
-    code span.kw { color: #007020; font-weight: bold; } /* Keyword */
-    code span.op { color: #666666; } /* Operator */
-    code span.ot { color: #007020; } /* Other */
-    code span.pp { color: #bc7a00; } /* Preprocessor */
-    code span.sc { color: #4070a0; } /* SpecialChar */
-    code span.ss { color: #bb6688; } /* SpecialString */
-    code span.st { color: #4070a0; } /* String */
-    code span.va { color: #19177c; } /* Variable */
-    code span.vs { color: #4070a0; } /* VerbatimString */
-    code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } /* Warning */
   </style>
   <style>
     body{font-family:-apple-system,'Segoe UI',Roboto,'Liberation Sans',Arial,sans-serif;
@@ -335,20 +271,18 @@ First</h4>
 <p>This is the one reading that invalidates everything downstream if you
 skip it. A charge-only or USB 2.0 cable silently caps the bus at 480
 Mbps and nothing anywhere reports an error.</p>
-<div class="sourceCode" id="cb2"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># find the tether interface and its USB device</span></span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> /sys/class/net/<span class="pp">*</span>/device/driver<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">ifn</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">dirname</span> <span class="va">$(</span><span class="fu">dirname</span> <span class="va">$i)))</span></span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>  <span class="va">drv</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> <span class="va">$i))</span></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>  <span class="cf">case</span> <span class="va">$drv</span> <span class="kw">in</span> <span class="ss">cdc_ncm</span><span class="kw">|</span><span class="ss">rndis_host</span><span class="kw">|</span><span class="ss">ipheth</span><span class="kw">)</span> <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$ifn</span><span class="st">  </span><span class="va">$drv</span><span class="st">&quot;</span><span class="cf">;;</span> <span class="cf">esac</span></span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span></code></pre></div>
-<pre class="plaintext"><code>enxb65575abcda3  ipheth</code></pre>
+<pre class="bash"><code># find the tether interface and its USB device
+for i in /sys/class/net/*/device/driver; do
+  ifn=$(basename $(dirname $(dirname $i)))
+  drv=$(basename $(readlink -f $i))
+  case $drv in cdc_ncm|rndis_host|ipheth) echo &quot;$ifn  $drv&quot;;; esac
+done
+enxb65575abcda3  ipheth</code></pre>
 <p>Then walk from the interface back to the USB device and read its
 trained speed:</p>
-<div class="sourceCode" id="cb4"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="va">dev</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> /sys/class/net/enxb65575abcda3/device/..<span class="va">))</span></span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> /sys/bus/usb/devices/<span class="va">$dev</span>/speed</span></code></pre></div>
-<pre class="plaintext"><code>480</code></pre>
+<pre class="bash"><code>dev=$(basename $(readlink -f /sys/class/net/enxb65575abcda3/device/..))
+cat /sys/bus/usb/devices/$dev/speed
+480</code></pre>
 <p><code>480</code> is USB 2.0, <code>5000</code> is USB 3.0 Gen 1,
 <code>10000</code> is Gen 2. Alongside it,
 <code>/sys/class/net/&lt;if&gt;/speed</code> gives the negotiated link
@@ -359,8 +293,7 @@ every record.</p>
 Device What It Is Capable Of</h4>
 <p>A 480 reading only means something once you know what the device
 brought to the negotiation.</p>
-<div class="sourceCode" id="cb6"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a><span class="ex">lsusb</span> <span class="at">-v</span> <span class="at">-d</span> 05ac:12a8 <span class="dv">2</span><span class="op">&gt;</span>/dev/null <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-A3</span> <span class="st">&quot;SuperSpeed&quot;</span></span></code></pre></div>
+<pre class="bash"><code>lsusb -v -d 05ac:12a8 2&gt;/dev/null | grep -A3 &quot;SuperSpeed&quot;</code></pre>
 <p>The descriptor block at the top of this article is that output.
 <strong>The device capability is the control.</strong> Compare the
 iPhone 16e measured eight minutes before the fastest pass in this log:
@@ -378,9 +311,8 @@ twice.</p>
 <p>The obvious move on a modern laptop is to enumerate the Type-C
 connectors, since the kernel binds each one to its USB ports at
 boot:</p>
-<div class="sourceCode" id="cb7"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dmesg</span> <span class="kw">|</span> <span class="fu">grep</span> <span class="st">&quot;typec port&quot;</span></span></code></pre></div>
-<pre class="plaintext"><code>typec port0: bound usb3-port1 (ops connector_ops [usbcore])
+<pre class="bash"><code>dmesg | grep &quot;typec port&quot;
+typec port0: bound usb3-port1 (ops connector_ops [usbcore])
 typec port0: bound usb4-port1 (ops connector_ops [usbcore])
 typec port1: bound usb3-port2 (ops connector_ops [usbcore])
 typec port1: bound usb2-port1 (ops connector_ops [usbcore])</code></pre>
@@ -396,13 +328,12 @@ no connector object, so it cannot appear there. The machine had a third
 external receptacle the map could not see.</p>
 <p>Take the port inventory from the hotplug entries in the port list
 instead:</p>
-<div class="sourceCode" id="cb9"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> /sys/bus/usb/devices/usb<span class="pp">*</span>/<span class="pp">*</span>/usb<span class="pp">*</span>-port<span class="pp">*</span><span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>  <span class="bu">[</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">cat</span> <span class="va">$p</span>/connect_type <span class="dv">2</span><span class="op">&gt;</span>/dev/null<span class="va">)</span><span class="st">&quot;</span> <span class="ot">=</span> <span class="st">&quot;hotplug&quot;</span> <span class="bu">]</span> <span class="kw">||</span> <span class="cf">continue</span></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">peer</span><span class="op">=</span><span class="st">&quot;-&quot;</span><span class="kw">;</span> <span class="bu">[</span> <span class="ot">-L</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">/peer&quot;</span> <span class="bu">]</span> <span class="kw">&amp;&amp;</span> <span class="va">peer</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">/peer&quot;</span><span class="va">)</span><span class="st">&quot;</span><span class="va">)</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$p)</span><span class="st">  peer=</span><span class="va">$peer</span><span class="st">  location=</span><span class="va">$(</span><span class="fu">cat</span> <span class="va">$p</span>/location<span class="va">)</span><span class="st">&quot;</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span> <span class="kw">|</span> <span class="fu">sort</span></span></code></pre></div>
-<pre class="plaintext"><code>usb3-port3  peer=usb4-port2  location=0x80000301
+<pre class="bash"><code>for p in /sys/bus/usb/devices/usb*/*/usb*-port*; do
+  [ &quot;$(cat $p/connect_type 2&gt;/dev/null)&quot; = &quot;hotplug&quot; ] || continue
+  peer=&quot;-&quot;; [ -L &quot;$p/peer&quot; ] &amp;&amp; peer=$(basename &quot;$(readlink -f &quot;$p/peer&quot;)&quot;)
+  echo &quot;$(basename $p)  peer=$peer  location=$(cat $p/location)&quot;
+done | sort
+usb3-port3  peer=usb4-port2  location=0x80000301
 usb4-port2  peer=usb3-port3  location=0x80000301</code></pre>
 <p><code>usb3-port3</code> is the USB-A receptacle. Its
 <code>peer</code> is a 10 Gb/s port on another hub, and the shared
@@ -420,10 +351,9 @@ of PD VDOs. The USB-C specification <strong>requires</strong> an
 e-marker on a passive cable supporting more than USB 2.0, and does not
 require one on a USB 2.0 cable. So a missing e-marker would be real
 evidence.</p>
-<div class="sourceCode" id="cb11"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ls</span> /sys/class/typec/</span>
-<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> /sys/class/typec/port0-partner/usb_power_delivery_revision</span></code></pre></div>
-<pre class="plaintext"><code>port0  port0-partner  port1  usb_power_delivery_revision
+<pre class="bash"><code>ls /sys/class/typec/
+cat /sys/class/typec/port0-partner/usb_power_delivery_revision
+port0  port0-partner  port1  usb_power_delivery_revision
 0.0</code></pre>
 <p><strong>There is no cable node, and that is not evidence about the
 cable.</strong> The stack is not surfacing VDO data at all: the
@@ -650,44 +580,42 @@ change.</p>
 <h4 id="cheat-sheet">Cheat Sheet</h4>
 <p>Both of these are in the repository and run directly, no arguments
 needed:</p>
-<div class="sourceCode" id="cb15"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="ex">bin/tether-bus-check</span>      <span class="co"># everything below, plus a verdict. No cellular data</span></span>
-<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a><span class="ex">bin/tether-report</span>         <span class="co"># the full diagnostic rubric. No cellular data</span></span>
-<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a><span class="ex">bin/tether-report</span> <span class="at">--measure</span>   <span class="co"># the standard pass. ~56 MB of metered data</span></span>
-<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a><span class="ex">bin/tether-interleave</span>     <span class="co"># A/B two transfer sizes against a moving link</span></span></code></pre></div>
+<pre class="bash"><code>bin/tether-bus-check      # everything below, plus a verdict. No cellular data
+bin/tether-report         # the full diagnostic rubric. No cellular data
+bin/tether-report --measure   # the standard pass. ~56 MB of metered data
+bin/tether-interleave     # A/B two transfer sizes against a moving link</code></pre>
 <p><code>tether-bus-check</code> reads both sides of the negotiation and
 says which participant cast the low vote. <code>tether-interleave</code>
 is the design from the section above — alternating sizes back to back so
 link drift falls on both equally — and it prints the cost before it
 spends it.</p>
 <p>The individual readings, if you would rather run them by hand:</p>
-<div class="sourceCode" id="cb16"><pre
-class="sourceCode bash"><code class="sourceCode bash"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="co"># 1. which interface is the tether, and what driver</span></span>
-<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> i <span class="kw">in</span> /sys/class/net/<span class="pp">*</span>/device/driver<span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>  <span class="va">ifn</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">dirname</span> <span class="va">$(</span><span class="fu">dirname</span> <span class="va">$i)))</span></span>
-<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a>  <span class="cf">case</span> <span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> <span class="va">$i))</span> <span class="kw">in</span></span>
-<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>    <span class="ss">cdc_ncm</span><span class="kw">|</span><span class="ss">rndis_host</span><span class="kw">|</span><span class="ss">ipheth</span><span class="kw">)</span> <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$ifn</span><span class="st"> </span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> <span class="va">$i))</span><span class="st">&quot;</span><span class="cf">;;</span> <span class="cf">esac</span></span>
-<span id="cb16-6"><a href="#cb16-6" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span></span>
-<span id="cb16-7"><a href="#cb16-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-8"><a href="#cb16-8" aria-hidden="true" tabindex="-1"></a><span class="co"># 2. is it holding the default route (or are you about to measure Wi-Fi)</span></span>
-<span id="cb16-9"><a href="#cb16-9" aria-hidden="true" tabindex="-1"></a><span class="ex">ip</span> route show default</span>
-<span id="cb16-10"><a href="#cb16-10" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-11"><a href="#cb16-11" aria-hidden="true" tabindex="-1"></a><span class="co"># 3. THE READING THAT MATTERS - 480 / 5000 / 10000</span></span>
-<span id="cb16-12"><a href="#cb16-12" aria-hidden="true" tabindex="-1"></a><span class="va">dev</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> /sys/class/net/<span class="op">&lt;</span>if<span class="op">&gt;</span>/device/..<span class="va">))</span></span>
-<span id="cb16-13"><a href="#cb16-13" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span> /sys/bus/usb/devices/<span class="va">$dev</span>/speed</span>
-<span id="cb16-14"><a href="#cb16-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-15"><a href="#cb16-15" aria-hidden="true" tabindex="-1"></a><span class="co"># 4. could the device do better? if no SuperSpeed capability, stop here</span></span>
-<span id="cb16-16"><a href="#cb16-16" aria-hidden="true" tabindex="-1"></a><span class="ex">lsusb</span> <span class="at">-v</span> <span class="at">-d</span> <span class="op">&lt;</span>vid<span class="op">&gt;</span>:<span class="op">&lt;</span>pid<span class="op">&gt;</span> 2<span class="op">&gt;</span>/dev/null <span class="kw">|</span> <span class="fu">grep</span> <span class="at">-A3</span> SuperSpeed</span>
-<span id="cb16-17"><a href="#cb16-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-18"><a href="#cb16-18" aria-hidden="true" tabindex="-1"></a><span class="co"># 5. every external port, including the ones /sys/class/typec cannot see</span></span>
-<span id="cb16-19"><a href="#cb16-19" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> p <span class="kw">in</span> /sys/bus/usb/devices/usb<span class="pp">*</span>/<span class="pp">*</span>/usb<span class="pp">*</span>-port<span class="pp">*</span><span class="kw">;</span> <span class="cf">do</span></span>
-<span id="cb16-20"><a href="#cb16-20" aria-hidden="true" tabindex="-1"></a>  <span class="bu">[</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">cat</span> <span class="va">$p</span>/connect_type <span class="dv">2</span><span class="op">&gt;</span>/dev/null<span class="va">)</span><span class="st">&quot;</span> <span class="ot">=</span> hotplug <span class="bu">]</span> <span class="kw">||</span> <span class="cf">continue</span></span>
-<span id="cb16-21"><a href="#cb16-21" aria-hidden="true" tabindex="-1"></a>  <span class="va">peer</span><span class="op">=</span><span class="st">&quot;-&quot;</span><span class="kw">;</span> <span class="bu">[</span> <span class="ot">-L</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">/peer&quot;</span> <span class="bu">]</span> <span class="kw">&amp;&amp;</span> <span class="va">peer</span><span class="op">=</span><span class="va">$(</span><span class="fu">basename</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">readlink</span> <span class="at">-f</span> <span class="st">&quot;</span><span class="va">$p</span><span class="st">/peer&quot;</span><span class="va">)</span><span class="st">&quot;</span><span class="va">)</span></span>
-<span id="cb16-22"><a href="#cb16-22" aria-hidden="true" tabindex="-1"></a>  <span class="bu">echo</span> <span class="st">&quot;</span><span class="va">$(</span><span class="fu">basename</span> <span class="va">$p)</span><span class="st"> peer=</span><span class="va">$peer</span><span class="st"> location=</span><span class="va">$(</span><span class="fu">cat</span> <span class="va">$p</span>/location<span class="va">)</span><span class="st">&quot;</span></span>
-<span id="cb16-23"><a href="#cb16-23" aria-hidden="true" tabindex="-1"></a><span class="cf">done</span> <span class="kw">|</span> <span class="fu">sort</span></span>
-<span id="cb16-24"><a href="#cb16-24" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb16-25"><a href="#cb16-25" aria-hidden="true" tabindex="-1"></a><span class="co"># 6. errors and drops - non-zero points at cable or power, not config</span></span>
-<span id="cb16-26"><a href="#cb16-26" aria-hidden="true" tabindex="-1"></a><span class="ex">ip</span> <span class="at">-s</span> link show <span class="op">&lt;</span>if<span class="op">&gt;</span></span></code></pre></div>
+<pre class="bash"><code># 1. which interface is the tether, and what driver
+for i in /sys/class/net/*/device/driver; do
+  ifn=$(basename $(dirname $(dirname $i)))
+  case $(basename $(readlink -f $i)) in
+    cdc_ncm|rndis_host|ipheth) echo &quot;$ifn $(basename $(readlink -f $i))&quot;;; esac
+done
+ 
+# 2. is it holding the default route (or are you about to measure Wi-Fi)
+ip route show default
+ 
+# 3. THE READING THAT MATTERS - 480 / 5000 / 10000
+dev=$(basename $(readlink -f /sys/class/net/&lt;if&gt;/device/..))
+cat /sys/bus/usb/devices/$dev/speed
+ 
+# 4. could the device do better? if no SuperSpeed capability, stop here
+lsusb -v -d &lt;vid&gt;:&lt;pid&gt; 2&gt;/dev/null | grep -A3 SuperSpeed
+ 
+# 5. every external port, including the ones /sys/class/typec cannot see
+for p in /sys/bus/usb/devices/usb*/*/usb*-port*; do
+  [ &quot;$(cat $p/connect_type 2&gt;/dev/null)&quot; = hotplug ] || continue
+  peer=&quot;-&quot;; [ -L &quot;$p/peer&quot; ] &amp;&amp; peer=$(basename &quot;$(readlink -f &quot;$p/peer&quot;)&quot;)
+  echo &quot;$(basename $p) peer=$peer location=$(cat $p/location)&quot;
+done | sort
+ 
+# 6. errors and drops - non-zero points at cable or power, not config
+ip -s link show &lt;if&gt;</code></pre>
 <p>Steps 1 through 6 cost no cellular data. Only run a transfer once
 they have told you what you are looking at.</p>
 <h4 id="summary">Summary</h4>
